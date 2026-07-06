@@ -78,8 +78,8 @@
   .chat-send-btn { background: none; border: none; color: var(--primary); font-size: 18px; cursor: pointer; padding: 0 4px; }
   .chat-camera-btn { color: var(--text-muted); font-size: 18px; cursor: pointer; }
 
-  /* 圖表與具體分析榜單 */
-  .pie-chart-wrapper { display: flex; justify-content: center; align-items: center; height: 160px; flex-shrink: 0; position: relative; margin-bottom: 8px; }
+  /* 圖表與排行分析 */
+  .pie-chart-wrapper { display: flex; justify-content: center; align-items: center; height: 180px; flex-shrink: 0; position: relative; margin-bottom: 8px; }
   .analysis-rank-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-top: 8px; }
   .analysis-rank-list::-webkit-scrollbar { display: none; }
   .rank-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: #F8FAFC; border-radius: 14px; border: 1px solid var(--border); }
@@ -137,7 +137,7 @@
 
 <div class="layout-grid">
   
-  <!-- 【分頁一】LINE 對話記帳區 -->
+  <!-- 面板一：LINE 對話記帳區 -->
   <div class="col active-panel" id="panel-chat">
     <div class="card">
       
@@ -164,7 +164,7 @@
           <div class="msg-row bot">
             <div class="bot-avatar">🤖</div>
             <div class="bubble">
-              終極完全體重構完成！已修復統計圓環與追加💰儲值分類！<br><br>
+              終極完全體重構完成！已修復統計圓環與追加街口支付分類！<br><br>
               💡 <b>萬用日期智慧對話範例：</b><br>
               - `07/01 儲值日幣 5000 西瓜卡`<br>
               - `7月5日 買模型 4500`<br>
@@ -197,20 +197,18 @@
     </div>
   </div>
 
-  <!-- 【分頁二】分類統計圖表 + 具體數據排行榜分析面盤 -->
+  <!-- 面板二：重構後的 100% 精準圓餅圖 -->
   <div class="col" id="panel-chart">
     <div class="card">
       <div class="card-title">
         <span>本月開銷統計圓環</span>
         <span class="num-font" style="font-size: 13px; color: var(--expense); font-weight: 700;" id="total-spent-text">總支出：¥ 0</span>
       </div>
-      
-      <!-- 圓環圖表 -->
       <div class="pie-chart-wrapper">
         <div id="svg-chart-container" style="width:100%; height:100%; display:flex; justify-content:center; align-items:center;"></div>
       </div>
       
-      <!-- 📊 全新追加：具體開銷排行榜數據分析大看板 -->
+      <!-- 📊 具體開銷排行榜數據分析大看板 -->
       <div class="card-title" style="margin-bottom:6px; border-top:1px dashed var(--border); padding-top:10px;">
          <span>📋 各分類具體開銷排行分析</span>
       </div>
@@ -222,7 +220,7 @@
     </div>
   </div>
 
-  <!-- 【分頁三】消費明細手帳 -->
+  <!-- 面板三：消費明細手帳 -->
   <div class="col" id="panel-list">
     <div class="card">
       <div class="card-title">
@@ -243,25 +241,30 @@
 (function () {
   "use strict";
 
- // 🎨 高對比鮮明版色彩定義
+  // 🎨 高對比鮮明版色彩定義
   var CATEGORIES = [
-    { id: "food", name: "餐飲", icon: "🍴", color: "#FF6B6B" },      /* 鮮明珊瑚紅 */
-    { id: "transport", name: "交通", icon: "🚗", color: "#2A9D8F" }, /* 飽和薄荷綠 */
-    { id: "stay", name: "住宿", icon: "🛏️", color: "#6C5CE7" },      /* 經典薰衣草紫 */
-    { id: "shopping", name: "購物", icon: "🛍️", color: "#FF85A2" },  /* 活潑櫻桃粉 */
-    { id: "fun", name: "娛樂", icon: "🎬", color: "#FDCB6E" },      /* 明亮向日葵黃 */
-    { id: "medical", name: "醫療", icon: "🏥", color: "#D63031" },    /* 警示寶石紅 */
-    { id: "education", name: "教育", icon: "📚", color: "#0984E3" },  /* 湛藍海軍藍 */
-    { id: "daily", name: "日用品", icon: "🏠", color: "#A8653C" },    /* 穩重橡木棕 */
-    { id: "pet", name: "寵物", icon: "🐾", color: "#6F8E26" },      /* 盎然草葉綠 */
-    { id: "utility", name: "水電費", icon: "⚡", color: "#FF9F43" },  /* 霓虹夕陽橘 */
-    { id: "phone", name: "通訊費", icon: "📱", color: "#00CEC9" },    /* 艷麗孔雀藍 */
-    { id: "topup", name: "儲值", icon: "💰", color: "#E9C46A" }      /* 閃耀亮金黃 */
+    { id: "food", name: "餐飲", icon: "🍴", color: "#FF6B6B" },      
+    { id: "transport", name: "交通", icon: "🚗", color: "#2A9D8F" }, 
+    { id: "stay", name: "住宿", icon: "🛏️", color: "#6C5CE7" },      
+    { id: "shopping", name: "購物", icon: "🛍️", color: "#FF85A2" },  
+    { id: "fun", name: "娛樂", icon: "🎬", color: "#FDCB6E" },      
+    { id: "medical", name: "醫療", icon: "🏥", color: "#D63031" },    
+    { id: "education", name: "教育", icon: "📚", color: "#0984E3" },  
+    { id: "daily", name: "日用品", icon: "🏠", color: "#A8653C" },    
+    { id: "pet", name: "寵物", icon: "🐾", color: "#6F8E26" },      
+    { id: "utility", name: "水電費", icon: "⚡", color: "#FF9F43" },  
+    { id: "phone", name: "通訊費", icon: "📱", color: "#00CEC9" },    
+    { id: "topup", name: "儲值", icon: "💰", color: "#E9C46A" }      
   ];
-  
+
+  // 💳 付款工具追加「街口支付 街」
   var ACCOUNTS = [
-    { id: "cash", name: "現金" }, { id: "suica", name: "Suica" }, { id: "credit", name: "信用卡" }, 
-    { id: "bank", name: "銀行帳戶" }, { id: "linepay", name: "LINE Pay" }
+    { id: "cash", name: "現金" }, 
+    { id: "suica", name: "Suica" }, 
+    { id: "jko", name: "街口支付" }, 
+    { id: "credit", name: "信用卡" }, 
+    { id: "bank", name: "銀行帳戶" }, 
+    { id: "linepay", name: "LINE Pay" }
   ];
 
   var STORAGE_KEY = "共榮防跑版系統-完全體-v17";
@@ -305,6 +308,7 @@
     container.scrollTop = container.scrollHeight;
   }
 
+  // 👑 圓環粗度大幅「加粗 1.5 倍（stroke-width 由 11 變為 16）」
   function renderChart(total) {
     var targetBox = document.getElementById("svg-chart-container");
     if (!targetBox) return;
@@ -317,8 +321,8 @@
     var catTotals = {};
     state.txns.forEach(function(t) { catTotals[t.category] = (catTotals[t.category] || 0) + t.amount; });
     
-    var r = 38; 
-    var strokeW = 12;
+    var r = 36; 
+    var strokeW = 16; // 核心加粗！
     var c = 2 * Math.PI * r; 
     var currentOffset = 0;
     
@@ -338,7 +342,6 @@
     targetBox.innerHTML = svgHtml;
   }
 
-  // 👑 全新升級的文字具體數據分析渲染引擎
   function renderAnalysisReport(totalSpent) {
     var container = document.getElementById("analysis-rank-container");
     if (!container) return;
@@ -348,11 +351,9 @@
       return;
     }
 
-    // 計算各分類總和
     var catTotals = {};
     state.txns.forEach(function(t) { catTotals[t.category] = (catTotals[t.category] || 0) + t.amount; });
 
-    // 轉換為陣列並排序 (金額由高到低)
     var rankArray = [];
     CATEGORIES.forEach(function(cat) {
       var amt = catTotals[cat.id] || 0;
@@ -362,17 +363,13 @@
     });
     rankArray.sort(function(a, b) { return b.amount - a.amount; });
 
-    // 尋找最大金額用於計算比例條寬度
     var maxAmount = rankArray.length > 0 ? rankArray[0].amount : 1;
 
-    // 產生 HTML
     var rankHtml = rankArray.map(function(item) {
       var cat = item.cat;
       var percentage = totalSpent > 0 ? Math.round((item.amount / totalSpent) * 100) : 0;
       var barWidth = Math.round((item.amount / maxAmount) * 100);
-      
-      // 針對「儲值」分類進行貼心的具體文字標註
-      var topupNotice = cat.id === 'topup' ? ' <span style="font-size:10px; color:var(--primary); font-weight:normal;">(金流預備)</span>' : '';
+      var topupNotice = cat.id === 'topup' ? ' <span style="font-size:10px; color:var(--primary); font-weight:normal;">(儲值預備)</span>' : '';
 
       return `
         <div class="rank-item">
@@ -398,7 +395,7 @@
     document.getElementById("total-spent-text").textContent = "總支出：¥ " + totalJpy.toLocaleString();
     
     renderChart(totalJpy);
-    renderAnalysisReport(totalJpy); // 即時同步分析排行榜
+    renderAnalysisReport(totalJpy);
 
     var groups = {};
     state.txns.forEach(function(t) {
@@ -418,7 +415,7 @@
         var c = CATEGORIES.find(function(x) { return x.id === t.category; }) || CATEGORIES[7];
         var a = ACCOUNTS.find(function(x) { return x.id === t.account; }) || ACCOUNTS[0];
         var photoHtml = t.photo ? '<img src="' + t.photo + '" class="receipt-thumbnail" onclick="App.openLightbox(\'' + t.photo + '\', event)">' : '';
-        var payIcon = a.id === 'suica' ? '🐧' : (a.id === 'credit' ? '💳' : (a.id === 'linepay' ? '💬' : '💴'));
+        var payIcon = a.id === 'suica' ? '🐧' : (a.id === 'jko' ? '街' : (a.id === 'credit' ? '💳' : (a.id === 'linepay' ? '💬' : '💴')));
         
         return `
           <div class="log-item">
