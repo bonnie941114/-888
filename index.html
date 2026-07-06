@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>日系清爽 · 智慧雙幣對話記帳</title>
+<title>日系清爽 · 智慧雙幣對話記帳手帳</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Noto+Sans+TC:wght@400;500;700&display=swap');
@@ -23,51 +23,77 @@
     --bot-bubble: #FFFFFF;    
     --user-bubble: #E3F0E5;   
     --user-text: #3B7A57;     
+    --active-green: #48BB78;
   }
   
-  body { font-family: 'Noto Sans TC', sans-serif; color: var(--text-main); background: var(--bg-page); min-height: 100dvh; padding: 24px; }
+  body { font-family: 'Noto Sans TC', sans-serif; color: var(--text-main); background: var(--bg-page); height: 100dvh; overflow: hidden; padding: 16px; }
   .num-font { font-family: 'Manrope', sans-serif; }
 
-  .layout-grid { max-width: 1150px; margin: 0 auto; display: grid; grid-template-columns: 1.3fr 1.1fr; gap: 24px; height: calc(100dvh - 48px); }
-  .col { display: flex; flex-direction: column; gap: 20px; height: 100%; }
+  .layout-grid { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1.2fr 1.1fr; gap: 16px; height: calc(100dvh - 32px); }
+  .col { display: flex; flex-direction: column; gap: 16px; height: 100%; min-height: 0; }
 
-  .card { background: var(--surface); border-radius: 24px; padding: 24px; border: 1px solid var(--border); box-shadow: 0 10px 30px rgba(0,0,0,0.01); display: flex; flex-direction: column; }
-  .card-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+  .card { background: var(--surface); border-radius: 24px; padding: 20px; border: 1px solid var(--border); box-shadow: 0 10px 30px rgba(0,0,0,0.01); display: flex; flex-direction: column; min-height: 0; }
+  .card-title { font-size: 15px; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
   
-  .chat-room { flex: 1; background: var(--line-chat-bg); border-radius: 20px; border: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
-  .chat-messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+  .live-status-board { background: #F8FAFC; border-radius: 16px; padding: 12px 16px; border: 1px solid var(--border); margin-bottom: 12px; display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; }
+  .live-board-main { display: flex; justify-content: space-between; align-items: center; }
+  .live-board-title { font-size: 11px; font-weight: 700; color: var(--text-muted); }
+  .live-board-val { font-size: 20px; font-weight: 800; color: var(--expense); }
+  
+  .live-board-date-zone { display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed var(--border); padding-top: 6px; font-size: 12px; }
+  .date-picker-input { border: none; background: transparent; color: var(--text-main); font-weight: 700; font-family: inherit; font-size: 12px; outline: none; cursor: pointer; }
+
+  .chat-room { flex: 1; background: var(--line-chat-bg); border-radius: 20px; border: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
+  .chat-messages { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
   .chat-messages::-webkit-scrollbar { display: none; }
   
-  .msg-row { display: flex; align-items: flex-start; max-width: 85%; }
+  .msg-row { display: flex; align-items: flex-start; max-width: 90%; }
   .msg-row.bot { align-self: flex-start; gap: 8px; }
   .msg-row.user { align-self: flex-end; flex-direction: row-reverse; }
   
-  .bot-avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+  .bot-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
   
-  .bubble { padding: 10px 14px; border-radius: 16px; font-size: 14px; font-weight: 500; line-height: 1.4; box-shadow: 0 2px 6px rgba(0,0,0,0.02); word-break: break-all; }
+  .bubble { padding: 10px 14px; border-radius: 16px; font-size: 13.5px; font-weight: 500; line-height: 1.4; box-shadow: 0 2px 6px rgba(0,0,0,0.01); word-break: break-all; }
   .bot .bubble { background: var(--bot-bubble); color: var(--text-main); border-top-left-radius: 4px; border: 1px solid var(--border); }
   .user .bubble { background: var(--user-bubble); color: var(--user-text); border-top-right-radius: 4px; font-weight: 700; }
   
-  .chat-guide-box { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-  .guide-btn { background: var(--surface); border: 1px solid var(--border); padding: 7px 14px; border-radius: 12px; font-size: 12px; font-weight: 700; color: var(--text-main); cursor: pointer; }
+  .chat-guide-box { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--border); }
+  .guide-btn { background: var(--surface); border: 1px solid var(--border); padding: 8px 4px; border-radius: 10px; font-size: 12px; font-weight: 700; color: var(--text-main); cursor: pointer; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 4px; }
 
-  .chat-input-bar { background: var(--surface); padding: 12px; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
-  .chat-control { flex: 1; border: 1px solid var(--border); border-radius: 20px; padding: 10px 16px; font-size: 14px; background: var(--bg-page); outline: none; font-family: inherit; color: var(--text-main); font-weight: 600; }
-  .chat-send-btn { background: none; border: none; color: var(--primary); font-size: 20px; cursor: pointer; padding: 0 4px; }
-  .chat-camera-btn { color: var(--text-muted); font-size: 20px; cursor: pointer; }
+  .chip-guide-box { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .chip-guide-btn { background: var(--surface); border: 1px solid var(--border); padding: 6px 12px; border-radius: 16px; font-size: 12px; font-weight: 700; cursor: pointer; color: var(--text-main); }
 
-  .pie-chart-wrapper { display: flex; justify-content: center; align-items: center; min-height: 140px; }
-  .log-list { overflow-y: auto; flex: 1; }
+  .chat-input-bar { background: var(--surface); padding: 10px; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .chat-control { flex: 1; border: 1px solid var(--border); border-radius: 20px; padding: 10px 14px; font-size: 14px; background: var(--bg-page); outline: none; color: var(--text-main); font-weight: 600; }
+  .chat-send-btn { background: none; border: none; color: var(--primary); font-size: 18px; cursor: pointer; padding: 0 4px; }
+  .chat-camera-btn { color: var(--text-muted); font-size: 18px; cursor: pointer; }
+
+  .pie-chart-wrapper { display: flex; justify-content: center; align-items: center; flex: 1; min-height: 0; position: relative; }
+  .log-list { overflow-y: auto; flex: 1; min-height: 0; }
   .log-list::-webkit-scrollbar { display: none; }
-  .log-item { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid var(--border); }
+  
+  .date-group-header { font-size: 12.5px; color: var(--text-muted); font-weight: 700; margin: 16px 0 8px 4px; display: flex; align-items: center; gap: 6px; }
+  
+  .log-item { display: flex; align-items: center; justify-content: space-between; padding: 11px 0; border-bottom: 1px solid var(--border); }
   .log-item:last-child { border-bottom: none; }
-  .log-icon-circle { width: 40px; height: 40px; border-radius: 50%; background: #FFF9F3; display: flex; align-items: center; justify-content: center; font-size: 16px; border: 1px solid var(--border); }
-  .log-jpy-val { font-size: 15px; font-weight: 800; }
-  .log-twd-val { font-size: 11px; color: var(--text-muted); font-weight: 600; }
-  .receipt-thumbnail { width: 34px; height: 34px; border-radius: 6px; object-fit: cover; border: 1px solid var(--border); cursor: pointer; }
+  .log-icon-circle { width: 38px; height: 38px; border-radius: 50%; background: #FFF9F3; display: flex; align-items: center; justify-content: center; font-size: 15px; border: 1px solid var(--border); flex-shrink: 0; }
+  .log-jpy-val { font-size: 14.5px; font-weight: 800; text-align: right; }
+  .log-twd-val { font-size: 11px; color: var(--text-muted); font-weight: 600; text-align: right; margin-top: 1px; }
+  .receipt-thumbnail { width: 32px; height: 32px; border-radius: 6px; object-fit: cover; border: 1px solid var(--border); cursor: pointer; }
+  
+  .del-btn-container { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 14px; padding: 6px; display: flex; align-items: center; justify-content: center; }
 
   #lightbox { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); z-index: 100; align-items: center; justify-content: center; }
   #lightbox img { max-width: 90%; max-height: 80vh; border-radius: 12px; }
+
+  @media (max-width: 768px) {
+    body { padding: 6px; height: 100dvh; }
+    .layout-grid { grid-template-columns: 1fr; grid-template-rows: 3.5fr 6.5fr; gap: 10px; height: 100%; }
+    .col { gap: 10px; }
+    .phone-hide-list { display: none !important; }
+    .card { padding: 14px; }
+    .pie-chart-wrapper { min-height: 90px; }
+  }
 </style>
 </head>
 <body>
@@ -77,10 +103,30 @@
   <!-- 左欄：LINE 對話記帳區 -->
   <div class="col">
     <div class="card" style="height: 100%;">
-      <div class="card-title">
-        <span><i class="fa-regular fa-comment-dots" style="color:var(--primary); font-size:18px; margin-right:6px;"></i> 智慧雙幣偵測聊天室</span>
-        <div style="font-size: 12px; color: var(--text-muted);">
-          匯率設定：<input type="number" id="rate-setting" value="0.212" step="0.001" style="width:50px; border:none; background:transparent; font-weight:700; color:var(--text-main);" onchange="App.updateRate()">
+      
+      <!-- 智慧看板 -->
+      <div class="live-status-board">
+        <div class="live-board-main">
+          <div>
+            <div class="live-board-title">當前輸入日圓預覽</div>
+            <div class="live-board-val num-font" id="live-jpy-board">¥ 0</div>
+          </div>
+          <div style="text-align: right;">
+            <div class="live-board-title">即時折合台幣</div>
+            <div class="live-board-val num-font" style="color:var(--primary);" id="live-twd-board">NT$ 0</div>
+          </div>
+        </div>
+        
+        <div class="live-board-date-zone">
+          <span style="color: var(--text-muted); font-weight: 700;"><i class="fa-regular fa-calendar-check"></i> 記帳日期戳記：</span>
+          <input type="date" id="txn-date-picker" class="date-picker-input num-font">
+        </div>
+      </div>
+      
+      <div class="card-title" style="margin-bottom:8px;">
+        <span><i class="fa-regular fa-comment-dots" style="color:var(--primary); font-size:16px; margin-right:6px;"></i> 智慧對話記帳空間</span>
+        <div style="font-size: 11px; color: var(--text-muted);">
+          設定匯率：<input type="number" id="rate-setting" value="0.212" step="0.001" style="width:48px; border:none; background:transparent; font-weight:700; color:var(--text-main);" onchange="App.updateRate()">
         </div>
       </div>
       
@@ -89,12 +135,11 @@
           <div class="msg-row bot">
             <div class="bot-avatar">🤖</div>
             <div class="bubble">
-              嗨！我已升級為<b>智慧雙幣偵測系統</b>模式！<br><br>
-              💡 <b>記帳規則：</b><br>
-              1. 預設輸入均為 <b>日圓 (¥)</b>。<br>
-              2. 語句中若包含「台幣」、「NT」或「twd」，系統會自動識別為 <b>新台幣 (NT$)</b>！<br><br>
-              例：<code style="background:#f4f4f4; padding:2px 4px; border-radius:4px;">餐飲 1200 烏龍麵</code> (日幣)<br>
-              例：<code style="background:#f4f4f4; padding:2px 4px; border-radius:4px;">購物 150 台幣 貼圖</code> (台幣)
+              對話解析引擎已全面升級！現在您可以隨意打字了。<br><br>
+              💡 <b>萬用口語輸入測試：</b><br>
+              - `07/01 吃的日幣 665`<br>
+              - `7月5日 買模型 4500`<br>
+              - `150台幣 飲料`
             </div>
           </div>
         </div>
@@ -105,7 +150,7 @@
           </label>
           <input type="file" id="camera-input" accept="image/*" capture="environment" style="display:none;" onchange="App.handlePhoto(event)">
           
-          <input type="text" id="chat-input-field" class="chat-control" placeholder="傳送訊息記帳..." onkeypress="App.handleKeyPress(event)">
+          <input type="text" id="chat-input-field" class="chat-control" placeholder="輸入開銷、日期或對話..." oninput="App.onLiveTyping()" onkeypress="App.handleKeyPress(event)">
           
           <button class="chat-send-btn" onclick="App.processUserMessage()">
             <i class="fa-solid fa-paper-plane"></i>
@@ -118,19 +163,19 @@
 
   <!-- 右欄：分析與明細 -->
   <div class="col">
-    <div class="card" style="height: 45%;">
-      <div class="card-title">
-        <span>本月分類統計</span>
-        <span class="num-font" style="font-size: 13px; color: var(--expense); font-weight: 700;" id="total-spent-text">總支出：¥ 0</span>
+    <div class="card" style="flex: 1.1;">
+      <div class="card-title" style="margin-bottom: 4px;">
+        <span>本月開銷統計圓環</span>
+        <span class="num-font" style="font-size: 12px; color: var(--expense); font-weight: 700;" id="total-spent-text">總支出：¥ 0</span>
       </div>
       <div class="pie-chart-wrapper">
         <div id="svg-chart-container"></div>
       </div>
     </div>
 
-    <div class="card" style="height: 52%;">
+    <div class="card phone-hide-list" style="flex: 1.2;">
       <div class="card-title">
-        <span>本月記帳明細</span>
+        <span>歷史消費明細 (依日期分組)</span>
         <button onclick="App.clearAll()" style="background:none; border:none; color:var(--text-muted); font-size:12px; font-weight:700; cursor:pointer;">清空</button>
       </div>
       <div class="log-list" id="log-container"></div>
@@ -166,10 +211,18 @@
     { id: "bank", name: "銀行帳戶" }, { id: "linepay", name: "LINE Pay" }
   ];
 
-  var STORAGE_KEY = "line-chat-ledger-v9";
+  var TAGS = [
+    { id: "none", name: "無標籤" }, { id: "exhibit", name: "展場" }, 
+    { id: "business", name: "公務" }, { id: "fixed", name: "固定開銷" }
+  ];
+
+  var STORAGE_KEY = "共榮對話記帳系統-v13";
   var state = { txns: [], exchangeRate: 0.212, pendingTxn: null, currentPhoto: null };
 
   function loadInitial() {
+    var todayStr = new Date().toISOString().slice(0, 10);
+    document.getElementById("txn-date-picker").value = todayStr;
+
     var val = localStorage.getItem(STORAGE_KEY);
     if (val) {
       try {
@@ -199,8 +252,8 @@
     }
     var catTotals = {};
     state.txns.forEach(t => { catTotals[t.category] = (catTotals[t.category] || 0) + t.amount; });
-    var r = 44, c = 2 * Math.PI * r, currentOffset = 0;
-    var svgHtml = `<svg width="130" height="130" viewBox="0 0 120 120">`;
+    var r = 42, c = 2 * Math.PI * r, currentOffset = 0;
+    var svgHtml = `<svg width="120" height="120" viewBox="0 0 120 120">`;
     CATEGORIES.forEach(cat => {
       var amt = catTotals[cat.id] || 0;
       if (amt > 0) {
@@ -220,53 +273,68 @@
     document.getElementById("total-spent-text").textContent = "總支出：¥ " + totalJpy.toLocaleString();
     renderChart(totalJpy);
 
-    var logHtml = state.txns.map(t => {
-      var c = CATEGORIES.find(x => x.id === t.category) || CATEGORIES[7];
-      var a = ACCOUNTS.find(x => x.id === t.account) || ACCOUNTS[0];
-      var photoHtml = t.photo ? `<img src="${t.photo}" class="receipt-thumbnail" onclick="App.openLightbox('${t.photo}', event)">` : '';
-      var payIcon = a.id === 'suica' ? '🐧' : (a.id === 'credit' ? '💳' : (a.id === 'linepay' ? '💬' : '💴'));
-      
+    var groups = {};
+    state.txns.forEach(t => {
+      var d = t.date || new Date().toISOString().slice(0,10);
+      if(!groups[d]) groups[d] = [];
+      groups[d].push(t);
+    });
+
+    var sortedDates = Object.keys(groups).sort((a,b) => b.localeCompare(a));
+
+    var logHtml = sortedDates.map(dateStr => {
+      var dateObj = new Date(dateStr);
+      var options = { month: 'long', day: 'numeric', year: 'numeric' };
+      var formattedDate = dateObj.toLocaleDateString('en-US', options);
+
+      var itemsHtml = groups[dateStr].map(t => {
+        var c = CATEGORIES.find(x => x.id === t.category) || CATEGORIES[7];
+        var a = ACCOUNTS.find(x => x.id === t.account) || ACCOUNTS[0];
+        var photoHtml = t.photo ? `<img src="${t.photo}" class="receipt-thumbnail" onclick="App.openLightbox('${t.photo}', event)">` : '';
+        var payIcon = a.id === 'suica' ? '🐧' : (a.id === 'credit' ? '💳' : (a.id === 'linepay' ? '💬' : '💴'));
+        
+        return `
+          <div class="log-item">
+            <div class="log-left">
+              <div class="log-icon-circle">${c.icon}</div>
+              <div class="log-details">
+                <div class="log-title">${t.note ? t.note : c.name}</div>
+                <div class="log-subtext">${t.note ? c.name + ' · ' : ''}${payIcon} ${a.name}</div>
+              </div>
+            </div>
+            <div class="log-amount-area">
+              ${photoHtml}
+              <div>
+                <div class="log-jpy-val num-font">¥ ${t.amount.toLocaleString()}</div>
+                <div class="log-twd-val num-font">≈ NT$ ${Math.round(t.amount * state.exchangeRate).toLocaleString()}</div>
+              </div>
+              <button class="del-btn-container" onclick="App.deleteRecord(${t.id})"><i class="fa-solid fa-trash-can"></i></button>
+            </div>
+          </div>
+        `;
+      }).join("");
+
       return `
-        <div class="log-item">
-          <div class="log-left">
-            <div class="log-icon-circle">${c.icon}</div>
-            <div class="log-details">
-              <div class="log-title">${t.note ? t.note : c.name}</div>
-              <div class="log-subtext">${t.note ? c.name + ' · ' : ''}${payIcon} ${a.name}</div>
-            </div>
-          </div>
-          <div class="log-amount-area">
-            ${photoHtml}
-            <div>
-              <div class="log-jpy-val num-font">¥ ${t.amount.toLocaleString()}</div>
-              <div class="log-twd-val num-font">≈ NT$ ${Math.round(t.amount * state.exchangeRate).toLocaleString()}</div>
-            </div>
-            <button onclick="App.deleteRecord(${t.id})" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:13px; margin-left:4px;"><i class="fa-solid fa-trash-can"></i></button>
-          </div>
+        <div class="date-group-container">
+          <div class="date-group-header num-font"><i class="fa-regular fa-clock"></i> ${formattedDate}</div>
+          ${itemsHtml}
         </div>
       `;
     }).join("");
 
-    document.getElementById("log-container").innerHTML = logHtml || `<div style="color:var(--text-muted); text-align:center; padding:40px 0; font-size:13px;">本月尚無任何記帳明細</div>`;
+    document.getElementById("log-container").innerHTML = logHtml || `<div style="color:var(--text-muted); text-align:center; padding:30px 0; font-size:13px;">本月尚無任何明細</div>`;
   }
 
-  function compressImage(file, callback) {
-    var reader = new FileReader();
-    reader.onload = e => {
-      var img = new Image();
-      img.onload = () => {
-        var canvas = document.createElement('canvas');
-        var ctx = canvas.getContext('2d');
-        var MAX_WIDTH = 800;
-        var scale = MAX_WIDTH / img.width;
-        canvas.width = MAX_WIDTH;
-        canvas.height = img.height * scale;
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        callback(canvas.toDataURL('image/jpeg', 0.8));
-      };
-      img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
+  function pad(n) { return n < 10 ? '0' + n : n; }
+
+  // 高階智慧提取器：專門在口語文本中過濾出真正的消費純數字
+  function extractAmount(text) {
+    // 移除已識別的日期格式，避免如 07/01 的 07 產生干擾
+    var clean = text.replace(/(\d{1,2})[月.\/-](\d{1,2})/g, "").replace(/(?:0)([1-9])([0-3][0-9])/g, "");
+    clean = clean.replace(/昨天|前天|台幣|nt|twd|日幣|日圓|元|的/gi, "").trim();
+    
+    var match = clean.match(/[\d.]+/);
+    return match ? parseFloat(match[0]) : null;
   }
 
   window.App = {
@@ -276,13 +344,33 @@
       localStorage.setItem(STORAGE_KEY, JSON.stringify({ txns: state.txns, exchangeRate: state.exchangeRate }));
       renderAll();
     },
+    onLiveTyping: () => {
+      var text = document.getElementById("chat-input-field").value.trim();
+      var isTwd = /台幣|nt|twd/i.test(text);
+      var num = extractAmount(text);
+      
+      if (num && num > 0) {
+        if (isTwd) {
+          document.getElementById("live-twd-board").textContent = "NT$ " + Math.round(num).toLocaleString();
+          document.getElementById("live-jpy-board").textContent = "¥ " + Math.round(num / state.exchangeRate).toLocaleString();
+        } else {
+          document.getElementById("live-jpy-board").textContent = "¥ " + Math.round(num).toLocaleString();
+          document.getElementById("live-twd-board").textContent = "NT$ " + Math.round(num * state.exchangeRate).toLocaleString();
+        }
+      } else {
+        document.getElementById("live-jpy-board").textContent = "¥ 0";
+        document.getElementById("live-twd-board").textContent = "NT$ 0";
+      }
+    },
     handlePhoto: e => {
       var file = e.target.files[0];
       if (!file) return;
-      compressImage(file, base64 => {
-        state.currentPhoto = base64;
-        appendMessage("bot", "📸 成功放入明細收據！請輸入金額完成對話。");
-      });
+      var reader = new FileReader();
+      reader.onload = ev => {
+        state.currentPhoto = ev.target.result;
+        appendMessage("bot", "📸 收據小票照片上傳成功！");
+      };
+      reader.readAsDataURL(file);
     },
     openLightbox: (src, e) => {
       e.stopPropagation();
@@ -297,71 +385,104 @@
       appendMessage("user", text);
       inputEl.value = "";
 
-      // 智慧雙幣偵測邏輯
-      var isTwd = /台幣|nt|twd/i.test(text);
-      
-      // 移除台幣關鍵字以利後續數字與分類解析
-      var cleanText = text.replace(/台幣|nt|twd/i, "").trim();
-      var parts = cleanText.split(/\s+/);
-      
-      var category = null, rawAmount = null, note = "";
+      var targetDate = document.getElementById("txn-date-picker").value;
+      var dateInfoText = "";
 
-      var foundCat = CATEGORIES.find(c => c.name === parts[0]);
-      if (foundCat) {
-        category = foundCat.id;
-        rawAmount = parseFloat(parts[1]);
-        if (parts[2]) note = parts.slice(2).join(" ");
+      // 1. 日期特徵隔離解析
+      if (/昨天/.test(text)) {
+        var d = new Date(targetDate); d.setDate(d.getDate() - 1);
+        targetDate = d.toISOString().slice(0, 10);
+        dateInfoText = " (昨天)";
+      } else if (/前天/.test(text)) {
+        var d = new Date(targetDate); d.setDate(d.getDate() - 2);
+        targetDate = d.toISOString().slice(0, 10);
+        dateInfoText = " (前天)";
       } else {
-        rawAmount = parseFloat(parts[0]);
-        if (parts[1]) note = parts.slice(1).join(" ");
+        var dateMatch = text.match(/(\d{1,2})[月.\/-](\d{1,2})/);
+        if (!dateMatch) {
+          // 處理 0701 形式
+          var fourDigitMatch = text.match(/\b(\d{2})(\d{2})\b/);
+          if (fourDigitMatch) {
+            var m = parseInt(fourDigitMatch[1]);
+            var day = parseInt(fourDigitMatch[2]);
+            if (m >= 1 && m <= 12 && day >= 1 && day <= 31) {
+              targetDate = `2026-${pad(m)}-${pad(day)}`;
+              dateInfoText = ` (自動跳轉至 ${m}/${day})`;
+            }
+          }
+        } else if (dateMatch) {
+          var m = pad(parseInt(dateMatch[1]));
+          var day = pad(parseInt(dateMatch[2]));
+          targetDate = `2026-${m}-${day}`;
+          dateInfoText = ` (自動跳轉至 ${m}/${day})`;
+        }
       }
 
-      if (isNaN(rawAmount) || rawAmount <= 0) {
-        appendMessage("bot", "❌ 辨識失敗。格式請用：`餐飲 1200` 或 `購物 150 台幣`。");
+      document.getElementById("txn-date-picker").value = targetDate;
+
+      // 2. 核心金額智慧隔離提取
+      var isTwd = /台幣|nt|twd/i.test(text);
+      var rawAmount = extractAmount(text);
+
+      if (!rawAmount || rawAmount <= 0) {
+        appendMessage("bot", "❌ 機器人沒抓到開銷金額。請試試：`餐飲 1200` 或 `07/01 點心 665`。");
         return;
       }
 
-      // 如果偵測到台幣，自動幫忙除以匯率，反推算回主系統的日幣數值
-      var finalJpyAmount = isTwd ? Math.round(rawAmount / state.exchangeRate) : rawAmount;
+      // 3. 提取品項備註 (過濾掉日期與金額數字)
+      var note = text.replace(/昨天|前天|台幣|nt|twd|日幣|日圓|元|的/gi, "")
+                     .replace(/(\d{1,2})[月.\/-](\d{1,2})/g, "")
+                     .replace(/\b\d{4}\b/g, "") // 移除非金額的 4 位數日期
+                     .replace(new RegExp(rawAmount, 'g'), "")
+                     .replace(/\s+/g, " ").trim();
 
-      state.pendingTxn = { amount: finalJpyAmount, note: note, category: category, account: "cash", photo: state.currentPhoto };
+      // 如果備註被清空了，就保留原分類
+      var category = null;
+      var foundCat = CATEGORIES.find(c => text.includes(c.name));
+      if (foundCat) {
+        category = foundCat.id;
+        note = note.replace(foundCat.name, "").trim();
+      }
+
+      var finalJpy = isTwd ? Math.round(rawAmount / state.exchangeRate) : Math.round(rawAmount);
+      var finalTwd = isTwd ? Math.round(rawAmount) : Math.round(rawAmount * state.exchangeRate);
+
+      state.pendingTxn = { amount: finalJpy, note: note || "", category: category, account: "cash", tag: "none", photo: state.currentPhoto, date: targetDate };
       state.currentPhoto = null;
 
+      var currencyReport = isTwd ? `台幣 NT$ ${finalTwd.toLocaleString()} (折合日圓 ¥ ${finalJpy.toLocaleString()})` : `日圓 ¥ ${finalJpy.toLocaleString()} (折合台幣 NT$ ${finalTwd.toLocaleString()})`;
+
       if (!category) {
-        var guideHtml = `<div class="chat-guide-box">` + CATEGORIES.map(c => `<button class="guide-btn" onclick="App.selectPendingCat('${c.id}')">${c.icon} ${c.name}</button>`).join("") + `</div>`;
-        appendMessage("bot", `智慧偵測完成！這筆 <b>${isTwd ? 'NT$' + rawAmount : '¥' + rawAmount}</b> 的消費屬於哪種分類：`, guideHtml);
+        var guideHtml = `<div class="chat-guide-box">` + CATEGORIES.map(c => `<button class="guide-btn" onclick="App.selectPendingCat('${c.id}')"><span style="font-size:15px;">${c.icon}</span><span>${c.name}</span></button>`).join("") + `</div>`;
+        appendMessage("bot", `📅 記帳日期：${targetDate}${dateInfoText}<br>💰 偵測金額：<b>${currencyReport}</b><br>📝 備註：${note || '無'}<br><br>請點選花費分類：`, guideHtml);
       } else {
-        App.askAccountOrSave();
+        appendMessage("bot", `📅 記帳日期：${targetDate}${dateInfoText}<br>💰 偵測金額：<b>${currencyReport}</b><br>📝 備註：${note || '無'}`);
+        App.askAccount();
       }
     },
     selectPendingCat: catId => {
       if (!state.pendingTxn) return;
       state.pendingTxn.category = catId;
-      App.askAccountOrSave();
+      App.askAccount();
     },
-    askAccountOrSave: () => {
-      var guideHtml = `<div class="chat-guide-box">` + ACCOUNTS.map(a => `<button class="guide-btn" onclick="App.finalSave('${a.id}')">${a.name}</button>`).join("") + `</div>`;
-      appendMessage("bot", `請點選付款帳戶：`, guideHtml);
+    askAccount: () => {
+      var guideHtml = `<div class="chip-guide-box">` + ACCOUNTS.map(a => `<button class="chip-guide-btn" onclick="App.finalSave('${a.id}')">${a.name}</button>`).join("") + `</div>`;
+      appendMessage("bot", `請選擇付款工具帳戶：`, guideHtml);
     },
     finalSave: accountId => {
       if (!state.pendingTxn) return;
       state.pendingTxn.account = accountId;
-      var t = state.pendingTxn;
-      var c = CATEGORIES.find(x => x.id === t.category);
       
-      state.txns.unshift({
-        id: Date.now(),
-        category: t.category,
-        amount: t.amount,
-        note: t.note,
-        account: t.account,
-        photo: t.photo
-      });
-
+      var t = state.pendingTxn;
+      state.txns.unshift(t);
       localStorage.setItem(STORAGE_KEY, JSON.stringify({ txns: state.txns, exchangeRate: state.exchangeRate }));
       state.pendingTxn = null;
 
-      appendMessage("bot", `✅ 智慧記帳成功！已同步換算雙幣數據並重新更新右欄圖表。`);
+      appendMessage("bot", `✅ 成功寫入！右側分析數據已同步即時更新。`);
+      
+      document.getElementById("txn-date-picker").value = new Date().toISOString().slice(0, 10);
+      document.getElementById("live-jpy-board").textContent = "¥ 0";
+      document.getElementById("live-twd-board").textContent = "NT$ 0";
       renderAll();
     },
     deleteRecord: id => {
@@ -372,7 +493,7 @@
       }
     },
     clearAll: () => {
-      if (confirm("確定要格式化清除所有紀錄嗎？")) {
+      if (confirm("確定要重置並清除所有歷史紀錄嗎？")) {
         state.txns = [];
         localStorage.setItem(STORAGE_KEY, JSON.stringify({ txns: [], exchangeRate: state.exchangeRate }));
         renderAll();
