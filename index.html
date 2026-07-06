@@ -164,11 +164,10 @@
           <div class="msg-row bot">
             <div class="bot-avatar">🤖</div>
             <div class="bubble">
-              終極完全體重構完成！已修復統計圓環與追加街口支付分類！<br><br>
-              💡 <b>萬用日期智慧對話範例：</b><br>
+              1:1 分離式修角圓環重構完畢！已全數移除總清空按鈕以防止悲劇發生。<br><br>
+              💡 <b>萬用口語快速輸入：</b><br>
               - `07/01 儲值日幣 5000 西瓜卡`<br>
-              - `7月5日 買模型 4500`<br>
-              - `昨天 飲料 150台幣`
+              - `7月5日 拉麵 1350`
             </div>
           </div>
         </div>
@@ -197,13 +196,15 @@
     </div>
   </div>
 
-  <!-- 面板二：重構後的 100% 精準圓餅圖 -->
+  <!-- 面板二：1:1 分離式高級圓環圖表 -->
   <div class="col" id="panel-chart">
     <div class="card">
       <div class="card-title">
         <span>本月開銷統計圓環</span>
         <span class="num-font" style="font-size: 13px; color: var(--expense); font-weight: 700;" id="total-spent-text">總支出：¥ 0</span>
       </div>
+      
+      <!-- 完美留白圓環圖表區 -->
       <div class="pie-chart-wrapper">
         <div id="svg-chart-container" style="width:100%; height:100%; display:flex; justify-content:center; align-items:center;"></div>
       </div>
@@ -220,12 +221,12 @@
     </div>
   </div>
 
-  <!-- 面板三：消費明細手帳 -->
+  <!-- 面板三：消費明細手帳 (已全面啟用嚴格防呆鎖定) -->
   <div class="col" id="panel-list">
     <div class="card">
       <div class="card-title">
-        <span>歷史消費明細 (依日期分組)</span>
-        <button onclick="App.clearAll()" style="background:none; border:none; color:var(--text-muted); font-size:12px; font-weight:700; cursor:pointer;">清空重置</button>
+        <span onclick="App.triggerSecretClick()" style="cursor:pointer; user-select:none;">歷史消費明細 (依日期分組)</span>
+        <span style="font-size: 10px; color: var(--text-muted); font-weight: normal;">[單筆手動刪除機制已啟用]</span>
       </div>
       <div class="log-list" id="log-container"></div>
     </div>
@@ -241,7 +242,6 @@
 (function () {
   "use strict";
 
-  // 🎨 高對比鮮明版色彩定義
   var CATEGORIES = [
     { id: "food", name: "餐飲", icon: "🍴", color: "#FF6B6B" },      
     { id: "transport", name: "交通", icon: "🚗", color: "#2A9D8F" }, 
@@ -257,7 +257,6 @@
     { id: "topup", name: "儲值", icon: "💰", color: "#E9C46A" }      
   ];
 
-  // 💳 付款工具追加「街口支付 街」
   var ACCOUNTS = [
     { id: "cash", name: "現金" }, 
     { id: "suica", name: "Suica" }, 
@@ -269,6 +268,7 @@
 
   var STORAGE_KEY = "共榮防跑版系統-完全體-v17";
   var state = { txns: [], exchangeRate: 0.212, pendingTxn: null, currentPhoto: null, activeTab: "chat" };
+  var secretClickCount = 0; // 隱藏防呆計數器
 
   function loadInitial() {
     var todayStr = new Date().toISOString().slice(0, 10);
@@ -308,7 +308,7 @@
     container.scrollTop = container.scrollHeight;
   }
 
-  // 👑 圓環粗度大幅「加粗 1.5 倍（stroke-width 由 11 變為 16）」
+  // 👑 1:1 完美還原 LINE_NOTE_260706_2.jpg：分離式、圓弧收角、帶空隙的高級圓環引擎
   function renderChart(total) {
     var targetBox = document.getElementById("svg-chart-container");
     if (!targetBox) return;
@@ -322,20 +322,36 @@
     state.txns.forEach(function(t) { catTotals[t.category] = (catTotals[t.category] || 0) + t.amount; });
     
     var r = 36; 
-    var strokeW = 16; // 核心加粗！
+    var strokeW = 14; 
     var c = 2 * Math.PI * r; 
     var currentOffset = 0;
     
-    var svgHtml = '<svg width="100%" height="100%" viewBox="0 0 100 100" style="max-width:145px; max-height:145px;">';
+    // 計算有多少個有效的花費分類，用來做間隔空隙計算
+    var activeCatsCount = 0;
+    CATEGORIES.forEach(function(cat) { if ((catTotals[cat.id] || 0) > 0) activeCatsCount++; });
+
+    // 每一道間隔設定固定空隙長度 (4px)
+    var gapSize = activeCatsCount > 1 ? 4 : 0; 
+    var totalGapLength = gapSize * activeCatsCount;
+    var availableLength = c - totalGapLength;
+
+    var svgHtml = '<svg width="100%" height="100%" viewBox="0 0 100 100" style="max-width:150px; max-height:150px;">';
     CATEGORIES.forEach(function(cat) {
       var amt = catTotals[cat.id] || 0;
       if (amt > 0) {
         var pct = amt / total;
-        var strokeLength = c * pct;
-        var strokeOffset = c - strokeLength + currentOffset;
+        // 分配扣除空隙後各分類實際應得的圓弧長度
+        var strokeLength = availableLength * pct;
         
-        svgHtml += '<circle cx="50" cy="50" r="' + r + '" fill="none" stroke="' + cat.color + '" stroke-width="' + strokeW + '" stroke-dasharray="' + c + '" stroke-dashoffset="' + strokeOffset + '" transform="rotate(-90 50 50)"></circle>';
-        currentOffset -= strokeLength;
+        // 利用 stroke-dasharray 控制色塊長度與後方隱形間隔，達成完美留白
+        var dashArrayStr = strokeLength + " " + (c - strokeLength);
+        var strokeOffset = c - currentOffset;
+        
+        // stroke-linecap="round" 完美賦予截圖中圓潤高質感的修角外觀
+        svgHtml += '<circle cx="50" cy="50" r="' + r + '" fill="none" stroke="' + cat.color + '" stroke-width="' + strokeW + '" stroke-linecap="round" stroke-dasharray="' + dashArrayStr + '" stroke-dashoffset="' + strokeOffset + '" transform="rotate(-90 50 50)"></circle>';
+        
+        // 下一個項目的起點需要疊加「實際長度 + 空隙長度」
+        currentOffset += (strokeLength + gapSize);
       }
     });
     svgHtml += '</svg>';
@@ -606,10 +622,14 @@
       var now = new Date();
       var timeStr = pad(now.getHours()) + ":" + pad(now.getMinutes());
 
-      state.pendingTxn = { amount: finalJpy, note: note || "", category: category, account: "cash", tag: "none", photo: state.currentPhoto, date: targetDate, time: timeStr };
+      // 產生唯一的 ID 供精確單筆刪除使用
+      var uniqueId = Date.now() + Math.floor(Math.random() * 1000);
+
+      state.pendingTxn = { id: uniqueId, amount: finalJpy, note: note || "", category: category, account: "cash", tag: "none", photo: state.currentPhoto, date: targetDate, time: timeStr };
       state.currentPhoto = null;
 
-      var currencyReport = isTwd ? "台幣 NT$ " + finalTwd.toLocaleString() + " (折合日圓 ¥ " + finalJpy.toLocaleString() + ")" : "日圓 ¥ " + finalJpy.toLocaleString() + " (折合台幣 NT$ " + finalTwd.toLocaleString() + ")";
+      var currencyReport = "日圓 ¥ " + finalJpy.toLocaleString() + " (折合台幣 NT$ " + finalTwd.toLocaleString() + ")";
+      if(isTwd) currencyReport = "台幣 NT$ " + finalTwd.toLocaleString() + " (折合日圓 ¥ " + finalJpy.toLocaleString() + ")";
 
       var drawer = document.getElementById("reply-drawer");
       var drawerTitle = document.getElementById("drawer-action-title");
@@ -663,18 +683,28 @@
       document.getElementById("live-twd-board").textContent = "NT$ 0";
       renderAll();
     },
+    // 🛡️ 修正精確單筆手動刪除機制 (不再誤觸全清)
     deleteRecord: function(id) {
-      if (confirm("確定要刪除這筆紀錄嗎？")) {
+      if (confirm("確定要刪除這筆消費明細嗎？（此動作無法復原）")) {
         state.txns = state.txns.filter(function(t) { return t.id !== id; });
         localStorage.setItem(STORAGE_KEY, JSON.stringify({ txns: state.txns, exchangeRate: state.exchangeRate }));
         renderAll();
       }
     },
-    clearAll: function() {
-      if (confirm("確定要格式化清除所有紀錄與快取照片嗎？")) {
-        state.txns = [];
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({ txns: [], exchangeRate: state.exchangeRate }));
-        renderAll();
+    // 🔒 雙重密碼確認隱藏式清空防呆鎖
+    triggerSecretClick: function() {
+      secretClickCount++;
+      if (secretClickCount >= 5) {
+        secretClickCount = 0; 
+        var pwd = prompt("⚠️ 您已觸發系統格式化核心！為了防止誤刪，請輸入大寫「RESET」以確認清除所有帳目：");
+        if (pwd === "RESET") {
+          state.txns = [];
+          localStorage.setItem(STORAGE_KEY, JSON.stringify({ txns: [], exchangeRate: state.exchangeRate }));
+          alert("💥 所有記帳快取已清空重置。");
+          renderAll();
+        } else if (pwd !== null) {
+          alert("❌ 密碼錯誤，安全防呆機制已鎖定資料。");
+        }
       }
     }
   };
