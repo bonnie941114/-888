@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>日系清爽 · 智慧雙幣對話記帳手帳</title>
+<title>日系減壓 · 智慧雙幣對話記帳手帳</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Noto+Sans+TC:wght@400;500;700&display=swap');
@@ -11,47 +11,46 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   
   :root {
-    --bg-page: #FBFBFA;      
+    --bg-page: #FBFBFA;      /* 無印快適暖米白 */
     --surface: #FFFFFF;      
     --text-main: #2D3748;    
     --text-muted: #A0AEC0;   
     --border: #EDF2F7; 
-    --primary: #9DB4C0;      
-    --expense: #C97A7A;      
+    --primary: #9DB4C0;      /* 寧靜藍 */
+    --expense: #C97A7A;      /* 櫻花柔粉 */
     
     --line-chat-bg: #F0F2F5;  
     --bot-bubble: #FFFFFF;    
     --user-bubble: #E3F0E5;   
     --user-text: #3B7A57;     
-    --active-green: #48BB78;
   }
   
-  body { font-family: 'Noto Sans TC', sans-serif; color: var(--text-main); background: var(--bg-page); height: 100dvh; overflow: hidden; padding: 16px; }
+  body { font-family: 'Noto Sans TC', sans-serif; color: var(--text-main); background: var(--bg-page); height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
   .num-font { font-family: 'Manrope', sans-serif; }
 
-  /* 跨平台雙欄黃金架喚 */
-  .layout-grid { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1.2fr 1.1fr; gap: 16px; height: 100%; min-height: 0; }
+  /* ================= 平台佈局分流 ================= */
+  .layout-grid { max-width: 1200px; margin: 0 auto; width: 100%; display: grid; grid-template-columns: 1.2fr 1.1fr; gap: 24px; flex: 1; min-height: 0; padding: 16px; }
   .col { display: flex; flex-direction: column; gap: 16px; height: 100%; min-height: 0; }
-
-  /* 手機端導覽切換頁籤 (電腦端隱藏) */
-  .mobile-tabs { display: none; background: #E4E7EB; padding: 4px; border-radius: 14px; margin-bottom: 8px; flex-shrink: 0; }
-  .tab-btn { flex: 1; background: none; border: none; padding: 10px; font-size: 13.5px; font-weight: 700; color: var(--text-main); border-radius: 10px; cursor: pointer; transition: 0.15s; position: relative; }
-  .tab-btn.active { background: var(--surface); box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-  .badge-dot { display: none; position: absolute; top: 8px; right: 25%; width: 6px; height: 6px; background: var(--expense); border-radius: 50%; }
+  
+  /* 頂部/底部分頁導航 (手機顯示，電腦隱藏) */
+  .phone-bottom-nav { display: none; background: var(--surface); border-top: 1px solid var(--border); height: 64px; padding-bottom: env(safe-area-inset-bottom); justify-content: space-around; align-items: center; flex-shrink: 0; }
+  .nav-tab-btn { background: none; border: none; color: var(--text-muted); display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; cursor: pointer; width: 25%; position: relative; }
+  .nav-tab-btn.active { color: var(--text-main); }
+  .nav-tab-btn i { font-size: 18px; }
+  .nav-badge { display: none; position: absolute; top: -2px; right: 32%; width: 6px; height: 6px; background: var(--expense); border-radius: 50%; }
 
   .card { background: var(--surface); border-radius: 24px; padding: 20px; border: 1px solid var(--border); box-shadow: 0 10px 30px rgba(0,0,0,0.01); display: flex; flex-direction: column; height: 100%; min-height: 0; }
   .card-title { font-size: 15px; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
   
-  /* 雙幣看板 */
-  .live-status-board { background: #F8FAFC; border-radius: 16px; padding: 12px 16px; border: 1px solid var(--border); margin-bottom: 12px; display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; }
+  /* 常駐雙幣看板 */
+  .live-status-board { background: #F8FAFC; border-radius: 16px; padding: 12px 16px; border: 1px solid var(--border); margin-bottom: 12px; display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; }
   .live-board-main { display: flex; justify-content: space-between; align-items: center; }
   .live-board-title { font-size: 11px; font-weight: 700; color: var(--text-muted); }
   .live-board-val { font-size: 20px; font-weight: 800; color: var(--expense); }
-  
   .live-board-date-zone { display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed var(--border); padding-top: 6px; font-size: 12px; }
-  .date-picker-input { border: none; background: transparent; color: var(--text-main); font-weight: 700; font-family: inherit; font-size: 12px; outline: none; cursor: pointer; }
+  .date-picker-input { border: none; background: transparent; color: var(--text-main); font-weight: 700; font-family: inherit; font-size: 12px; outline: none; }
 
-  /* 聊天室 */
+  /* LINE 聊天室外觀 */
   .chat-room { flex: 1; background: var(--line-chat-bg); border-radius: 20px; border: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
   .chat-messages { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
   .chat-messages::-webkit-scrollbar { display: none; }
@@ -59,77 +58,84 @@
   .msg-row { display: flex; align-items: flex-start; max-width: 90%; }
   .msg-row.bot { align-self: flex-start; gap: 8px; }
   .msg-row.user { align-self: flex-end; flex-direction: row-reverse; }
-  
   .bot-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
   
   .bubble { padding: 10px 14px; border-radius: 16px; font-size: 13.5px; font-weight: 500; line-height: 1.4; box-shadow: 0 2px 6px rgba(0,0,0,0.01); word-break: break-all; }
   .bot .bubble { background: var(--bot-bubble); color: var(--text-main); border-top-left-radius: 4px; border: 1px solid var(--border); }
   .user .bubble { background: var(--user-bubble); color: var(--user-text); border-top-right-radius: 4px; font-weight: 700; }
   
+  /* 智慧互動按鈕選單 */
   .chat-guide-box { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--border); }
   .guide-btn { background: var(--surface); border: 1px solid var(--border); padding: 8px 4px; border-radius: 10px; font-size: 12px; font-weight: 700; color: var(--text-main); cursor: pointer; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 4px; }
-
   .chip-guide-box { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
   .chip-guide-btn { background: var(--surface); border: 1px solid var(--border); padding: 6px 12px; border-radius: 16px; font-size: 12px; font-weight: 700; cursor: pointer; color: var(--text-main); }
 
-  /* 底欄 */
+  /* 聊天底欄 */
   .chat-input-bar { background: var(--surface); padding: 10px; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
   .chat-control { flex: 1; border: 1px solid var(--border); border-radius: 20px; padding: 10px 14px; font-size: 14px; background: var(--bg-page); outline: none; color: var(--text-main); font-weight: 600; }
   .chat-send-btn { background: none; border: none; color: var(--primary); font-size: 18px; cursor: pointer; padding: 0 4px; }
   .chat-camera-btn { color: var(--text-muted); font-size: 18px; cursor: pointer; }
 
-  /* 分析與圖表 */
-  .pie-chart-wrapper { display: flex; justify-content: center; align-items: center; height: 160px; flex-shrink: 0; margin-bottom: 12px; position: relative; }
+  /* 右欄圖表與分組明細 */
+  .pie-chart-wrapper { display: flex; justify-content: center; align-items: center; height: 160px; flex-shrink: 0; position: relative; margin-bottom: 8px; }
   .log-list { overflow-y: auto; flex: 1; min-height: 0; }
   .log-list::-webkit-scrollbar { display: none; }
   
   .date-group-header { font-size: 12.5px; color: var(--text-muted); font-weight: 700; margin: 16px 0 8px 4px; display: flex; align-items: center; gap: 6px; }
-  
   .log-item { display: flex; align-items: center; justify-content: space-between; padding: 11px 0; border-bottom: 1px solid var(--border); }
   .log-item:last-child { border-bottom: none; }
   .log-icon-circle { width: 38px; height: 38px; border-radius: 50%; background: #FFF9F3; display: flex; align-items: center; justify-content: center; font-size: 15px; border: 1px solid var(--border); flex-shrink: 0; }
   .log-jpy-val { font-size: 14.5px; font-weight: 800; text-align: right; }
   .log-twd-val { font-size: 11px; color: var(--text-muted); font-weight: 600; text-align: right; margin-top: 1px; }
   .receipt-thumbnail { width: 32px; height: 32px; border-radius: 6px; object-fit: cover; border: 1px solid var(--border); cursor: pointer; }
-  
   .del-btn-container { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 14px; padding: 6px; display: flex; align-items: center; justify-content: center; }
 
   #lightbox { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); z-index: 100; align-items: center; justify-content: center; }
   #lightbox img { max-width: 90%; max-height: 80vh; border-radius: 12px; }
 
-  /* ================= ⚡手機端真·共榮響應式重構 ================= */
+  /* ================= ⚡手機端物理防跑版重構 ================= */
   @media (max-width: 768px) {
-    body { padding: 8px; height: 100dvh; display: flex; flex-direction: column; }
-    .layout-grid { display: block; flex: 1; height: 100%; min-height: 0; position: relative; }
-    .col { position: absolute; inset: 0; display: none; height: 100%; }
+    body { padding: 0; height: 100dvh; }
+    .layout-grid { display: block; padding: 8px; height: calc(100% - 64px); position: relative; }
     
-    /* 啟動手機分頁籤顯示 */
+    /* 每個大面板在手機端全部化身為滿版卡片，切換時才展示 */
+    .col { position: absolute; inset: 8px; display: none; height: calc(100% - 16px); }
     .col.active-panel { display: flex; }
-    .mobile-tabs { display: flex; }
+    
+    /* 活化手機底部分頁導航 */
+    .phone-bottom-nav { display: flex; }
     .card { padding: 14px; border-radius: 20px; }
+    
+    /* 允許明細分頁獨立在手機上完整展示 */
+    .phone-full-panel { display: flex !important; flex: 1 !important; height: 100% !important; }
+    .pie-chart-wrapper { height: 180px; }
   }
 </style>
 </head>
 <body>
 
-<!-- 手機版專屬頂部共榮頁籤 -->
-<div class="mobile-tabs">
-  <button id="tab-chat" class="tab-btn active" onclick="App.switchTab('chat')">
-    <i class="fa-regular fa-comment-dots"></i> 💬 對話記帳
+<!-- 🚀 手機端物理防跑版：常駐底部分頁導航 -->
+<div class="phone-bottom-nav">
+  <button id="nav-btn-chat" class="nav-tab-btn active" onclick="App.switchTab('chat')">
+    <i class="fa-regular fa-comment-dots"></i><span>聊天記帳</span>
   </button>
-  <button id="tab-data" class="tab-btn" onclick="App.switchTab('data')">
-    <i class="fa-solid fa-chart-pie"></i> 📊 開銷統計
-    <span id="tab-notification" class="badge-dot"></span>
+  <button id="nav-btn-chart" class="nav-tab-btn" onclick="App.switchTab('chart')">
+    <i class="fa-solid fa-chart-pie"></i><span>開銷統計</span>
+    <span id="badge-chart" class="nav-badge"></span>
+  </button>
+  <button id="nav-btn-list" class="nav-tab-btn" onclick="App.switchTab('list')">
+    <i class="fa-solid fa-list-ul"></i><span>消費明細</span>
+    <span id="badge-list" class="nav-badge"></span>
   </button>
 </div>
 
 <div class="layout-grid">
   
-  <!-- 【欄位 A】LINE 對話記帳區 -->
+  <!-- 【面板一】LINE 智慧對話記帳空間 -->
   <div class="col active-panel" id="panel-chat">
     <div class="card">
       
-      <!-- 雙幣看板 -->
+      <!-- 雙幣預覽看板 -->
       <div class="live-status-board">
         <div class="live-board-main">
           <div>
@@ -141,9 +147,8 @@
             <div class="live-board-val num-font" style="color:var(--primary);" id="live-twd-board">NT$ 0</div>
           </div>
         </div>
-        
         <div class="live-board-date-zone">
-          <span style="color: var(--text-muted); font-weight: 700;"><i class="fa-regular fa-calendar-check"></i> 記帳日期：</span>
+          <span style="color: var(--text-muted); font-weight: 700;"><i class="fa-regular fa-calendar-check"></i> 記帳日期戳記：</span>
           <input type="date" id="txn-date-picker" class="date-picker-input num-font">
         </div>
       </div>
@@ -160,8 +165,8 @@
           <div class="msg-row bot">
             <div class="bot-avatar">🤖</div>
             <div class="bubble">
-              對話解析引擎已優化！排版全面升級為**真·防跑版切換共榮**模式。<br><br>
-              💡 <b>萬用口語輸入測試：</b><br>
+              對話引擎更正完畢！手機 App 導覽架構重構上線。<br><br>
+              💡 <b>您可以打得更隨意：</b><br>
               - `07/01 吃的日幣 665`<br>
               - `7月5日 買模型 4500`<br>
               - `150台幣 飲料`
@@ -186,27 +191,27 @@
     </div>
   </div>
 
-  <!-- 【欄位 B】分析與日期分組明細 (在手機端點擊統計即可無縫滑動切換) -->
-  <div class="col" id="panel-data">
-    <div class="card" style="height: 100%;">
-      
-      <div class="card-title" style="margin-bottom: 4px; flex-shrink:0;">
+  <!-- 【面板二】分類統計圖表 (手機端獨立成滿版分頁，大螢幕雙欄常駐) -->
+  <div class="col" id="panel-chart">
+    <div class="card">
+      <div class="card-title">
         <span>本月開銷統計圓環</span>
         <span class="num-font" style="font-size: 12px; color: var(--expense); font-weight: 700;" id="total-spent-text">總支出：¥ 0</span>
       </div>
-      
-      <!-- 統計圖表 -->
       <div class="pie-chart-wrapper">
         <div id="svg-chart-container" style="width:100%; height:100%; display:flex; justify-content:center; align-items:center;"></div>
       </div>
+    </div>
+  </div>
 
-      <!-- 歷史消費明細 (依日期分組，完全1:1還原設計) -->
-      <div class="card-title" style="margin-top: 8px; border-top:1px solid var(--border); padding-top:12px; flex-shrink:0;">
+  <!-- 【面板三】歷史消費明細 (手機端獨立成滿版分頁，大螢幕雙欄常駐) -->
+  <div class="col phone-full-panel" id="panel-list">
+    <div class="card">
+      <div class="card-title">
         <span>歷史消費明細 (依日期分組)</span>
         <button onclick="App.clearAll()" style="background:none; border:none; color:var(--text-muted); font-size:12px; font-weight:700; cursor:pointer;">清空</button>
       </div>
       <div class="log-list" id="log-container"></div>
-      
     </div>
   </div>
 
@@ -239,13 +244,8 @@
     { id: "bank", name: "銀行帳戶" }, { id: "linepay", name: "LINE Pay" }
   ];
 
-  var TAGS = [
-    { id: "none", name: "無標籤" }, { id: "exhibit", name: "展場" }, 
-    { id: "business", name: "公務" }, { id: "fixed", name: "固定開銷" }
-  ];
-
-  var STORAGE_KEY = "真共榮對話記帳系統-v15";
-  var state = { txns: [], exchangeRate: 0.212, pendingTxn: null, currentPhoto: null, currentTab: "chat" };
+  var STORAGE_KEY = "真共榮防跑版系統-v16";
+  var state = { txns: [], exchangeRate: 0.212, pendingTxn: null, currentPhoto: null, activeTab: "chat" };
 
   function loadInitial() {
     var todayStr = new Date().toISOString().slice(0, 10);
@@ -261,17 +261,18 @@
     }
     document.getElementById("rate-setting").value = state.exchangeRate;
     
-    // 檢查寬度，如果是電腦端，強行展示全畫面共榮佈局
-    handleResizeLayout();
+    handleResponsiveLayout();
     renderAll();
   }
 
-  function handleResizeLayout() {
+  function handleResponsiveLayout() {
     if (window.innerWidth > 768) {
+      // 電腦端：三個面板完美並列展現大雙欄常駐
       document.getElementById("panel-chat").style.display = "flex";
-      document.getElementById("panel-data").style.display = "flex";
+      document.getElementById("panel-chart").style.display = "flex";
+      document.getElementById("panel-list").style.display = "flex";
     } else {
-      App.switchTab(state.currentTab);
+      App.switchTab(state.activeTab);
     }
   }
 
@@ -294,7 +295,7 @@
     state.txns.forEach(t => { catTotals[t.category] = (catTotals[t.category] || 0) + t.amount; });
     
     var r = 40, c = 2 * Math.PI * r, currentOffset = 0;
-    var svgHtml = `<svg width="100%" height="100%" viewBox="0 0 100 100" style="max-width:140px; max-height:140px;">`;
+    var svgHtml = `<svg width="100%" height="100%" viewBox="0 0 100 100" style="max-width:150px; max-height:150px;">`;
     CATEGORIES.forEach(cat => {
       var amt = catTotals[cat.id] || 0;
       if (amt > 0) {
@@ -363,7 +364,7 @@
       `;
     }).join("");
 
-    document.getElementById("log-container").innerHTML = logHtml || `<div style="color:var(--text-muted); text-align:center; padding:30px 0; font-size:13px;">本月尚無任何明細</div>`;
+    document.getElementById("log-container").innerHTML = logHtml || `<div style="color:var(--text-muted); text-align:center; padding:40px 0; font-size:13px;">本月尚無任何明細</div>`;
   }
 
   function pad(n) { return n < 10 ? '0' + n : n; }
@@ -376,23 +377,30 @@
   }
 
   window.App = {
-    // 手機端的智慧分頁跳轉控制 (徹底消滅排版擠壓變形)
+    // 專業 App 級別分頁管理：完全隔離防跑版
     switchTab: tabId => {
-      if (window.innerWidth > 768) return; // 電腦端不執行分頁
-      state.currentTab = tabId;
+      if (window.innerWidth > 768) return; 
+      state.activeTab = tabId;
       
       document.getElementById("panel-chat").classList.remove("active-panel");
-      document.getElementById("panel-data").classList.remove("active-panel");
-      document.getElementById("tab-chat").classList.remove("active-panel");
-      document.getElementById("tab-data").classList.remove("active-panel");
+      document.getElementById("panel-chart").classList.remove("active-panel");
+      document.getElementById("panel-list").classList.remove("active-panel");
+      
+      document.getElementById("nav-btn-chat").classList.remove("active");
+      document.getElementById("nav-btn-chart").classList.remove("active");
+      document.getElementById("nav-btn-list").classList.remove("active");
       
       if (tabId === 'chat') {
         document.getElementById("panel-chat").classList.add("active-panel");
-        document.getElementById("tab-chat").classList.add("active-panel");
+        document.getElementById("nav-btn-chat").classList.add("active");
+      } else if (tabId === 'chart') {
+        document.getElementById("panel-chart").classList.add("active-panel");
+        document.getElementById("nav-btn-chart").classList.add("active");
+        document.getElementById("badge-chart").style.display = "none";
       } else {
-        document.getElementById("panel-data").classList.add("active-panel");
-        document.getElementById("tab-data").classList.add("active-panel");
-        document.getElementById("tab-notification").style.display = "none"; // 點進去後小紅點消失
+        document.getElementById("panel-list").classList.add("active-panel");
+        document.getElementById("nav-btn-list").classList.add("active");
+        document.getElementById("badge-list").style.display = "none";
       }
     },
     handleKeyPress: e => { if (e.key === "Enter") App.processUserMessage(); },
@@ -530,11 +538,12 @@
       localStorage.setItem(STORAGE_KEY, JSON.stringify({ txns: state.txns, exchangeRate: state.exchangeRate }));
       state.pendingTxn = null;
 
-      appendMessage("bot", `✅ 成功記入帳目！數據已在背景重新統計計算。`);
+      appendMessage("bot", `✅ 成功記入！統計與明細分頁已同步更新完畢。`);
       
-      // 提示使用者統計數據已更新
-      if(window.innerWidth <= 768) {
-        document.getElementById("tab-notification").style.display = "block"; 
+      // 手機端背景更新提示（亮起紅點）
+      if (window.innerWidth <= 768) {
+        document.getElementById("badge-chart").style.display = "block";
+        document.getElementById("badge-list").style.display = "block";
       }
 
       document.getElementById("txn-date-picker").value = new Date().toISOString().slice(0, 10);
@@ -558,7 +567,7 @@
     }
   };
 
-  window.addEventListener('resize', handleResizeLayout);
+  window.addEventListener('resize', handleResponsiveLayout);
   loadInitial();
 })();
 </script>
