@@ -23,12 +23,12 @@
     --bot-bubble: #FFFFFF;    
     --user-bubble: #E3F0E5;   
     --user-text: #3B7A57;     
-    --active-green: #48BB78;
   }
   
   body { font-family: 'Noto Sans TC', sans-serif; color: var(--text-main); background: var(--bg-page); height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
   .num-font { font-family: 'Manrope', sans-serif; }
 
+  /* ================= 國際 App 級底部分頁架構 ================= */
   .layout-grid { max-width: 1200px; margin: 0 auto; width: 100%; display: grid; grid-template-columns: 1.2fr 1.1fr; gap: 24px; flex: 1; min-height: 0; padding: 16px; }
   .col { display: flex; flex-direction: column; height: 100%; min-height: 0; }
   
@@ -41,6 +41,7 @@
   .card { background: var(--surface); border-radius: 24px; padding: 20px; border: 1px solid var(--border); box-shadow: 0 10px 30px rgba(0,0,0,0.01); display: flex; flex-direction: column; height: 100%; min-height: 0; }
   .card-title { font-size: 15px; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
   
+  /* 常駐預覽看板 */
   .live-status-board { background: #F8FAFC; border-radius: 16px; padding: 12px 16px; border: 1px solid var(--border); margin-bottom: 12px; display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; }
   .live-board-main { display: flex; justify-content: space-between; align-items: center; }
   .live-board-title { font-size: 11px; font-weight: 700; color: var(--text-muted); }
@@ -48,6 +49,7 @@
   .live-board-date-zone { display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed var(--border); padding-top: 6px; font-size: 12px; }
   .date-picker-input { border: none; background: transparent; color: var(--text-main); font-weight: 700; font-family: inherit; font-size: 12px; outline: none; }
 
+  /* LINE 聊天室窗 */
   .chat-room { flex: 1; background: var(--line-chat-bg); border-radius: 20px; border: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; min-height: 0; position: relative; }
   .chat-messages { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
   .chat-messages::-webkit-scrollbar { display: none; }
@@ -61,11 +63,12 @@
   .bot .bubble { background: var(--bot-bubble); color: var(--text-main); border-top-left-radius: 4px; border: 1px solid var(--border); }
   .user .bubble { background: var(--user-bubble); color: var(--user-text); border-top-right-radius: 4px; font-weight: 700; }
   
+  /* 彈出抽屜 */
   .quick-reply-drawer { background: var(--surface); border-top: 1px solid var(--border); display: none; flex-direction: column; padding: 10px; gap: 8px; flex-shrink: 0; }
   .drawer-title { font-size: 12px; font-weight: 700; color: var(--text-muted); text-align: center; }
   
   .chat-guide-box { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; max-height: 140px; overflow-y: auto; }
-  .guide-btn { background: var(--bg-page); border: 1px solid var(--border); padding: 8px 2px; border-radius: 10px; font-size: 12px; font-weight: 700; color: var(--text-main); cursor: pointer; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .guide-btn { background: var(--bg-page); border: 1px solid var(--border); padding: 8px 2px; border-radius: 10px; font-size: 11px; font-weight: 700; color: var(--text-main); cursor: pointer; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 2px; }
   
   .chip-guide-box { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; padding: 4px 0; }
   .chip-guide-btn { background: var(--bg-page); border: 1px solid var(--border); padding: 8px 16px; border-radius: 16px; font-size: 13px; font-weight: 700; cursor: pointer; color: var(--text-main); }
@@ -75,7 +78,17 @@
   .chat-send-btn { background: none; border: none; color: var(--primary); font-size: 18px; cursor: pointer; padding: 0 4px; }
   .chat-camera-btn { color: var(--text-muted); font-size: 18px; cursor: pointer; }
 
+  /* 圖表與具體分析榜單 */
   .pie-chart-wrapper { display: flex; justify-content: center; align-items: center; height: 160px; flex-shrink: 0; position: relative; margin-bottom: 8px; }
+  .analysis-rank-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-top: 8px; }
+  .analysis-rank-list::-webkit-scrollbar { display: none; }
+  .rank-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: #F8FAFC; border-radius: 14px; border: 1px solid var(--border); }
+  .rank-left { display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 700; }
+  .rank-bar-bg { width: 60px; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; margin-left: 6px; display: inline-block; vertical-align: middle; }
+  .rank-bar-fill { height: 100%; border-radius: 3px; }
+  .rank-right { text-align: right; }
+
+  /* 明細列表 */
   .log-list { overflow-y: auto; flex: 1; min-height: 0; }
   .log-list::-webkit-scrollbar { display: none; }
   
@@ -107,6 +120,7 @@
 </head>
 <body>
 
+<!-- 常駐底部分頁導航 -->
 <div class="phone-bottom-nav">
   <button id="nav-btn-chat" class="nav-tab-btn active" onclick="App.switchTab('chat')">
     <i class="fa-regular fa-comment-dots"></i><span>對話記帳</span>
@@ -123,9 +137,11 @@
 
 <div class="layout-grid">
   
+  <!-- 【分頁一】LINE 對話記帳區 -->
   <div class="col active-panel" id="panel-chat">
     <div class="card">
       
+      <!-- 智慧看板 -->
       <div class="live-status-board">
         <div class="live-board-main">
           <div>
@@ -138,7 +154,7 @@
           </div>
         </div>
         <div class="live-board-date-zone">
-          <span><i class="fa-regular fa-calendar-check"></i> 預設記帳日期（支援智慧識別變更）：</span>
+          <span><i class="fa-regular fa-calendar-check"></i> 預設記帳日期：</span>
           <input type="date" id="txn-date-picker" class="date-picker-input num-font">
         </div>
       </div>
@@ -148,20 +164,22 @@
           <div class="msg-row bot">
             <div class="bot-avatar">🤖</div>
             <div class="bubble">
-              對話引擎更正完畢！手機 App 導覽架構重構上線。<br><br>
-              💡 <b>您可以打得更隨意：</b><br>
-              - `07/01 吃的日幣 665`<br>
+              終極完全體重構完成！已修復統計圓環與追加💰儲值分類！<br><br>
+              💡 <b>萬用日期智慧對話範例：</b><br>
+              - `07/01 儲值日幣 5000 西瓜卡`<br>
               - `7月5日 買模型 4500`<br>
-              - `150台幣 飲料`
+              - `昨天 飲料 150台幣`
             </div>
           </div>
         </div>
         
+        <!-- 智慧防跑版彈出抽屜 -->
         <div class="quick-reply-drawer" id="reply-drawer">
           <div class="drawer-title" id="drawer-action-title">請選擇花費分類</div>
           <div id="drawer-content-target"></div>
         </div>
         
+        <!-- 輸入底欄 -->
         <div class="chat-input-bar">
           <label for="camera-input" class="chat-camera-btn" title="拍攝/上傳收據小票">
             <i class="fa-solid fa-camera"></i>
@@ -179,21 +197,32 @@
     </div>
   </div>
 
+  <!-- 【分頁二】分類統計圖表 + 具體數據排行榜分析面盤 -->
   <div class="col" id="panel-chart">
     <div class="card">
       <div class="card-title">
         <span>本月開銷統計圓環</span>
-        <span class="num-font" style="font-size: 12px; color: var(--expense); font-weight: 700;" id="total-spent-text">總支出：¥ 0</span>
+        <span class="num-font" style="font-size: 13px; color: var(--expense); font-weight: 700;" id="total-spent-text">總支出：¥ 0</span>
       </div>
+      
+      <!-- 圓環圖表 -->
       <div class="pie-chart-wrapper">
         <div id="svg-chart-container" style="width:100%; height:100%; display:flex; justify-content:center; align-items:center;"></div>
       </div>
-      <div style="font-size: 11px; color: var(--text-muted); text-align: center; margin-top: 10px;">
+      
+      <!-- 📊 全新追加：具體開銷排行榜數據分析大看板 -->
+      <div class="card-title" style="margin-bottom:6px; border-top:1px dashed var(--border); padding-top:10px;">
+         <span>📋 各分類具體開銷排行分析</span>
+      </div>
+      <div class="analysis-rank-list" id="analysis-rank-container"></div>
+
+      <div style="font-size: 11px; color: var(--text-muted); text-align: center; margin-top: 10px; flex-shrink:0;">
         匯率設定：<input type="number" id="rate-setting" value="0.212" step="0.001" style="width:48px; border:none; background:transparent; font-weight:700; color:var(--text-main); outline:none;" onchange="App.updateRate()">
       </div>
     </div>
   </div>
 
+  <!-- 【分頁三】消費明細手帳 -->
   <div class="col" id="panel-list">
     <div class="card">
       <div class="card-title">
@@ -225,7 +254,8 @@
     { id: "daily", name: "日用品", icon: "🏠", color: "#D1B394" },
     { id: "pet", name: "寵物", icon: "🐾", color: "#B3C5B1" },
     { id: "utility", name: "水電費", icon: "⚡", color: "#FFE66D" },
-    { id: "phone", name: "通訊費", icon: "📱", color: "#A2D2FF" }
+    { id: "phone", name: "通訊費", icon: "📱", color: "#A2D2FF" },
+    { id: "topup", name: "儲值", icon: "💰", color: "#E9C46A" }
   ];
 
   var ACCOUNTS = [
@@ -233,7 +263,7 @@
     { id: "bank", name: "銀行帳戶" }, { id: "linepay", name: "LINE Pay" }
   ];
 
-  var STORAGE_KEY = "真共榮防跑版系統-完全體-v17";
+  var STORAGE_KEY = "共榮防跑版系統-完全體-v17";
   var state = { txns: [], exchangeRate: 0.212, pendingTxn: null, currentPhoto: null, activeTab: "chat" };
 
   function loadInitial() {
@@ -275,52 +305,118 @@
   }
 
   function renderChart(total) {
+    var targetBox = document.getElementById("svg-chart-container");
+    if (!targetBox) return;
+    
     if (total === 0) {
-      document.getElementById("svg-chart-container").innerHTML = `<div style="color:var(--text-muted); font-size:13px;">尚無累積數據</div>`;
+      targetBox.innerHTML = `<div style="color:var(--text-muted); font-size:13px;">尚無累積開銷數據</div>`;
       return;
     }
-    var catTotals = {};
-    state.txns.forEach(t => { catTotals[t.category] = (catTotals[t.category] || 0) + t.amount; });
     
-    var r = 40, c = 2 * Math.PI * r, currentOffset = 0;
-    var svgHtml = `<svg width="100%" height="100%" viewBox="0 0 100 100" style="max-width:145px; max-height:145px;">`;
-    CATEGORIES.forEach(cat => {
+    var catTotals = {};
+    state.txns.forEach(function(t) { catTotals[t.category] = (catTotals[t.category] || 0) + t.amount; });
+    
+    var r = 38; 
+    var strokeW = 12;
+    var c = 2 * Math.PI * r; 
+    var currentOffset = 0;
+    
+    var svgHtml = '<svg width="100%" height="100%" viewBox="0 0 100 100" style="max-width:145px; max-height:145px;">';
+    CATEGORIES.forEach(function(cat) {
       var amt = catTotals[cat.id] || 0;
       if (amt > 0) {
         var pct = amt / total;
         var strokeLength = c * pct;
         var strokeOffset = c - strokeLength + currentOffset;
-        svgHtml += `<circle cx="50" cy="50" r="${r}" fill="none" stroke="${cat.color}" stroke-width="11" stroke-dasharray="${c}" stroke-dashoffset="${strokeOffset}" transform="rotate(-90 50 50)"></circle>`;
+        
+        svgHtml += '<circle cx="50" cy="50" r="' + r + '" fill="none" stroke="' + cat.color + '" stroke-width="' + strokeW + '" stroke-dasharray="' + c + '" stroke-dashoffset="' + strokeOffset + '" transform="rotate(-90 50 50)"></circle>';
         currentOffset -= strokeLength;
       }
     });
-    svgHtml += `</svg>`;
-    document.getElementById("svg-chart-container").innerHTML = svgHtml;
+    svgHtml += '</svg>';
+    targetBox.innerHTML = svgHtml;
+  }
+
+  // 👑 全新升級的文字具體數據分析渲染引擎
+  function renderAnalysisReport(totalSpent) {
+    var container = document.getElementById("analysis-rank-container");
+    if (!container) return;
+
+    if (state.txns.length === 0) {
+      container.innerHTML = `<div style="color:var(--text-muted); text-align:center; padding:20px; font-size:13px;">暫無花費數據可供排行分析</div>`;
+      return;
+    }
+
+    // 計算各分類總和
+    var catTotals = {};
+    state.txns.forEach(function(t) { catTotals[t.category] = (catTotals[t.category] || 0) + t.amount; });
+
+    // 轉換為陣列並排序 (金額由高到低)
+    var rankArray = [];
+    CATEGORIES.forEach(function(cat) {
+      var amt = catTotals[cat.id] || 0;
+      if (amt > 0) {
+        rankArray.push({ cat: cat, amount: amt });
+      }
+    });
+    rankArray.sort(function(a, b) { return b.amount - a.amount; });
+
+    // 尋找最大金額用於計算比例條寬度
+    var maxAmount = rankArray.length > 0 ? rankArray[0].amount : 1;
+
+    // 產生 HTML
+    var rankHtml = rankArray.map(function(item) {
+      var cat = item.cat;
+      var percentage = totalSpent > 0 ? Math.round((item.amount / totalSpent) * 100) : 0;
+      var barWidth = Math.round((item.amount / maxAmount) * 100);
+      
+      // 針對「儲值」分類進行貼心的具體文字標註
+      var topupNotice = cat.id === 'topup' ? ' <span style="font-size:10px; color:var(--primary); font-weight:normal;">(金流預備)</span>' : '';
+
+      return `
+        <div class="rank-item">
+          <div class="rank-left">
+            <span>${cat.icon} ${cat.name}${topupNotice}</span>
+            <div class="rank-bar-bg">
+              <div class="rank-bar-fill" style="width: ${barWidth}%; background-color: ${cat.color};"></div>
+            </div>
+          </div>
+          <div class="rank-right">
+            <div style="font-size:14px; font-weight:800;" class="num-font">¥ ${item.amount.toLocaleString()}</div>
+            <div style="font-size:10.5px; color:var(--text-muted); font-weight:600;" class="num-font">${percentage}% · 折合 NT$ ${Math.round(item.amount * state.exchangeRate).toLocaleString()}</div>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    container.innerHTML = rankHtml;
   }
 
   function renderAll() {
-    var totalJpy = state.txns.reduce((s, t) => s + t.amount, 0);
+    var totalJpy = state.txns.reduce(function(s, t) { return s + t.amount; }, 0);
     document.getElementById("total-spent-text").textContent = "總支出：¥ " + totalJpy.toLocaleString();
+    
     renderChart(totalJpy);
+    renderAnalysisReport(totalJpy); // 即時同步分析排行榜
 
     var groups = {};
-    state.txns.forEach(t => {
+    state.txns.forEach(function(t) {
       var d = t.date || new Date().toISOString().slice(0,10);
       if(!groups[d]) groups[d] = [];
       groups[d].push(t);
     });
 
-    var sortedDates = Object.keys(groups).sort((a,b) => b.localeCompare(a));
+    var sortedDates = Object.keys(groups).sort(function(a, b) { return b.localeCompare(a); });
 
-    var logHtml = sortedDates.map(dateStr => {
+    var logHtml = sortedDates.map(function(dateStr) {
       var dateObj = new Date(dateStr);
       var options = { month: 'long', day: 'numeric', year: 'numeric' };
       var formattedDate = dateObj.toLocaleDateString('en-US', options);
 
-      var itemsHtml = groups[dateStr].map(t => {
-        var c = CATEGORIES.find(x => x.id === t.category) || CATEGORIES[7];
-        var a = ACCOUNTS.find(x => x.id === t.account) || ACCOUNTS[0];
-        var photoHtml = t.photo ? `<img src="${t.photo}" class="receipt-thumbnail" onclick="App.openLightbox('${t.photo}', event)">` : '';
+      var itemsHtml = groups[dateStr].map(function(t) {
+        var c = CATEGORIES.find(function(x) { return x.id === t.category; }) || CATEGORIES[7];
+        var a = ACCOUNTS.find(function(x) { return x.id === t.account; }) || ACCOUNTS[0];
+        var photoHtml = t.photo ? '<img src="' + t.photo + '" class="receipt-thumbnail" onclick="App.openLightbox(\'' + t.photo + '\', event)">' : '';
         var payIcon = a.id === 'suica' ? '🐧' : (a.id === 'credit' ? '💳' : (a.id === 'linepay' ? '💬' : '💴'));
         
         return `
@@ -366,9 +462,9 @@
 
   function compressImage(file, callback) {
     var reader = new FileReader();
-    reader.onload = e => {
+    reader.onload = function(e) {
       var img = new Image();
-      img.onload = () => {
+      img.onload = function() {
         var canvas = document.createElement('canvas');
         var ctx = canvas.getContext('2d');
         var MAX_WIDTH = 500; 
@@ -384,7 +480,7 @@
   }
 
   window.App = {
-    switchTab: tabId => {
+    switchTab: function(tabId) {
       if (window.innerWidth > 768) return; 
       state.activeTab = tabId;
       document.getElementById("panel-chat").classList.remove("active-panel");
@@ -407,13 +503,13 @@
         document.getElementById("badge-list").style.display = "none";
       }
     },
-    handleKeyPress: e => { if (e.key === "Enter") App.processUserMessage(); },
-    updateRate: () => {
+    handleKeyPress: function(e) { if (e.key === "Enter") App.processUserMessage(); },
+    updateRate: function() {
       state.exchangeRate = parseFloat(document.getElementById("rate-setting").value) || 0.212;
       localStorage.setItem(STORAGE_KEY, JSON.stringify({ txns: state.txns, exchangeRate: state.exchangeRate }));
       renderAll();
     },
-    onLiveTyping: () => {
+    onLiveTyping: function() {
       var text = document.getElementById("chat-input-field").value.trim();
       var isTwd = /台幣|nt|twd/i.test(text);
       var num = extractAmount(text);
@@ -431,20 +527,20 @@
         document.getElementById("live-twd-board").textContent = "NT$ 0";
       }
     },
-    handlePhoto: e => {
+    handlePhoto: function(e) {
       var file = e.target.files[0];
       if (!file) return;
-      compressImage(file, base64 => {
+      compressImage(file, function(base64) {
         state.currentPhoto = base64;
         appendMessage("bot", "📸 收據小票照片上傳成功！");
       });
     },
-    openLightbox: (src, e) => {
+    openLightbox: function(src, e) {
       e.stopPropagation();
       document.getElementById("lightbox-img").src = src;
       document.getElementById("lightbox").style.display = "flex";
     },
-    processUserMessage: () => {
+    processUserMessage: function() {
       var inputEl = document.getElementById("chat-input-field");
       var text = inputEl.value.trim();
       if (!text) return;
@@ -471,15 +567,15 @@
             var m = parseInt(fourDigitMatch[1]);
             var day = parseInt(fourDigitMatch[2]);
             if (m >= 1 && m <= 12 && day >= 1 && day <= 31) {
-              targetDate = `2026-${pad(m)}-${pad(day)}`;
-              dateInfoText = ` (自動跳轉至 ${m}/${day})`;
+              targetDate = "2026-" + pad(m) + "-" + pad(day);
+              dateInfoText = " (自動跳轉至 " + m + "/" + day + ")";
             }
           }
         } else if (dateMatch) {
           var m = pad(parseInt(dateMatch[1]));
           var day = pad(parseInt(dateMatch[2]));
-          targetDate = `2026-${m}-${day}`;
-          dateInfoText = ` (自動跳轉至 ${m}/${day})`;
+          targetDate = "2026-" + m + "-" + day;
+          dateInfoText = " (自動跳轉至 " + m + "/" + day + ")";
         }
       }
 
@@ -489,7 +585,7 @@
       var rawAmount = extractAmount(text);
 
       if (!rawAmount || rawAmount <= 0) {
-        appendMessage("bot", "❌ 沒辨識到開銷數字喔！格式請輸入如：`餐飲 1200` 或 `07/01 665`。");
+        appendMessage("bot", "❌ 沒辨識到開銷數字喔！格式請輸入如：`餐飲 1200` 或 `儲值 5000`。");
         return;
       }
 
@@ -500,7 +596,7 @@
                      .replace(/\s+/g, " ").trim();
 
       var category = null;
-      var foundCat = CATEGORIES.find(c => text.includes(c.name));
+      var foundCat = CATEGORIES.find(function(c) { return text.includes(c.name); });
       if (foundCat) {
         category = foundCat.id;
         note = note.replace(foundCat.name, "").trim();
@@ -515,7 +611,7 @@
       state.pendingTxn = { amount: finalJpy, note: note || "", category: category, account: "cash", tag: "none", photo: state.currentPhoto, date: targetDate, time: timeStr };
       state.currentPhoto = null;
 
-      var currencyReport = isTwd ? `台幣 NT$ ${finalTwd.toLocaleString()} (折合日圓 ¥ ${finalJpy.toLocaleString()})` : `日圓 ¥ ${finalJpy.toLocaleString()} (折合台幣 NT$ ${finalTwd.toLocaleString()})`;
+      var currencyReport = isTwd ? "台幣 NT$ " + finalTwd.toLocaleString() + " (折合日圓 ¥ " + finalJpy.toLocaleString() + ")" : "日圓 ¥ " + finalJpy.toLocaleString() + " (折合台幣 NT$ " + finalTwd.toLocaleString() + ")";
 
       var drawer = document.getElementById("reply-drawer");
       var drawerTitle = document.getElementById("drawer-action-title");
@@ -523,31 +619,31 @@
       
       if (!category) {
         drawerTitle.textContent = "請點選花費分類 💰金額：" + (isTwd ? "NT$"+rawAmount : "¥"+rawAmount);
-        target.innerHTML = `<div class="chat-guide-box">` + CATEGORIES.map(c => `<button class="guide-btn" onclick="App.selectPendingCat('${c.id}')"><span>${c.icon}</span><span>${c.name}</span></button>`).join("") + `</div>`;
+        target.innerHTML = '<div class="chat-guide-box">' + CATEGORIES.map(function(c) { return '<button class="guide-btn" onclick="App.selectPendingCat(\'' + c.id + '\')"><span>' + c.icon + '</span><span>' + c.name + '</span></button>'; }).join("") + '</div>';
         drawer.style.display = "flex";
-        appendMessage("bot", `📅 交易日期：${targetDate}${dateInfoText}<br>金額分析：${currencyReport}。請在下方抽屜點選消費分類。`);
+        appendMessage("bot", `📅 交易日期：${targetDate}${dateInfoText}<br>金額分析：${currencyReport}。請在下方選單點選消費分類。`);
       } else {
         appendMessage("bot", `📅 交易日期：${targetDate}${dateInfoText}<br>金額分析：${currencyReport}<br>備註：${note || foundCat.name}`);
         App.askAccount();
       }
     },
-    selectPendingCat: catId => {
+    selectPendingCat: function(catId) {
       if (!state.pendingTxn) return;
       state.pendingTxn.category = catId;
-      var c = CATEGORIES.find(x => x.id === catId);
+      var c = CATEGORIES.find(function(x) { return x.id === catId; });
       if(!state.pendingTxn.note) state.pendingTxn.note = c.name; 
       App.askAccount();
     },
-    askAccount: () => {
+    askAccount: function() {
       var drawer = document.getElementById("reply-drawer");
       var drawerTitle = document.getElementById("drawer-action-title");
       var target = document.getElementById("drawer-content-target");
       
       drawerTitle.textContent = "請點選支付工具帳戶";
-      target.innerHTML = `<div class="chip-guide-box">` + ACCOUNTS.map(a => `<button class="chip-guide-btn" onclick="App.finalSave('${a.id}')">${a.name}</button>`).join("") + `</div>`;
+      target.innerHTML = '<div class="chip-guide-box">' + ACCOUNTS.map(function(a) { return '<button class="chip-guide-btn" onclick="App.finalSave(\'' + a.id + '\')">' + a.name + '</button>'; }).join("") + '</div>';
       drawer.style.display = "flex";
     },
-    finalSave: accountId => {
+    finalSave: function(accountId) {
       if (!state.pendingTxn) return;
       state.pendingTxn.account = accountId;
       
@@ -557,7 +653,7 @@
       state.pendingTxn = null;
 
       document.getElementById("reply-drawer").style.display = "none";
-      appendMessage("bot", `✅ 成功記入帳目！`);
+      appendMessage("bot", "✅ 成功記入！");
       
       if (window.innerWidth <= 768) {
         document.getElementById("badge-chart").style.display = "block";
@@ -569,15 +665,15 @@
       document.getElementById("live-twd-board").textContent = "NT$ 0";
       renderAll();
     },
-    deleteRecord: id => {
+    deleteRecord: function(id) {
       if (confirm("確定要刪除這筆紀錄嗎？")) {
-        state.txns = state.txns.filter(t => t.id !== id);
+        state.txns = state.txns.filter(function(t) { return t.id !== id; });
         localStorage.setItem(STORAGE_KEY, JSON.stringify({ txns: state.txns, exchangeRate: state.exchangeRate }));
         renderAll();
       }
     },
-    clearAll: () => {
-      if (confirm("確定要格式化清除所有紀錄嗎？")) {
+    clearAll: function() {
+      if (confirm("確定要格式化清除所有紀錄與快取照片嗎？")) {
         state.txns = [];
         localStorage.setItem(STORAGE_KEY, JSON.stringify({ txns: [], exchangeRate: state.exchangeRate }));
         renderAll();
