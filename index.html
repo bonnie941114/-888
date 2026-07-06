@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>日系清爽 · 智慧雙幣對話記帳手帳</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 <style>
@@ -29,12 +29,14 @@
   body { font-family: 'Noto Sans TC', sans-serif; color: var(--text-main); background: var(--bg-page); height: 100dvh; overflow: hidden; padding: 16px; }
   .num-font { font-family: 'Manrope', sans-serif; }
 
-  .layout-grid { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1.2fr 1.1fr; gap: 16px; height: calc(100dvh - 32px); }
+  /* 跨平台雙欄/上下屏黃金架構 */
+  .layout-grid { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1.2fr 1.1fr; gap: 16px; height: calc(100% - 0px); min-height: 0; }
   .col { display: flex; flex-direction: column; gap: 16px; height: 100%; min-height: 0; }
 
   .card { background: var(--surface); border-radius: 24px; padding: 20px; border: 1px solid var(--border); box-shadow: 0 10px 30px rgba(0,0,0,0.01); display: flex; flex-direction: column; min-height: 0; }
   .card-title { font-size: 15px; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
   
+  /* 看板 */
   .live-status-board { background: #F8FAFC; border-radius: 16px; padding: 12px 16px; border: 1px solid var(--border); margin-bottom: 12px; display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; }
   .live-board-main { display: flex; justify-content: space-between; align-items: center; }
   .live-board-title { font-size: 11px; font-weight: 700; color: var(--text-muted); }
@@ -43,6 +45,7 @@
   .live-board-date-zone { display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed var(--border); padding-top: 6px; font-size: 12px; }
   .date-picker-input { border: none; background: transparent; color: var(--text-main); font-weight: 700; font-family: inherit; font-size: 12px; outline: none; cursor: pointer; }
 
+  /* 聊天室 */
   .chat-room { flex: 1; background: var(--line-chat-bg); border-radius: 20px; border: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
   .chat-messages { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
   .chat-messages::-webkit-scrollbar { display: none; }
@@ -57,12 +60,14 @@
   .bot .bubble { background: var(--bot-bubble); color: var(--text-main); border-top-left-radius: 4px; border: 1px solid var(--border); }
   .user .bubble { background: var(--user-bubble); color: var(--user-text); border-top-right-radius: 4px; font-weight: 700; }
   
+  /* 膠囊按鈕 */
   .chat-guide-box { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--border); }
   .guide-btn { background: var(--surface); border: 1px solid var(--border); padding: 8px 4px; border-radius: 10px; font-size: 12px; font-weight: 700; color: var(--text-main); cursor: pointer; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 4px; }
 
   .chip-guide-box { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
   .chip-guide-btn { background: var(--surface); border: 1px solid var(--border); padding: 6px 12px; border-radius: 16px; font-size: 12px; font-weight: 700; cursor: pointer; color: var(--text-main); }
 
+  /* 底欄 */
   .chat-input-bar { background: var(--surface); padding: 10px; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
   .chat-control { flex: 1; border: 1px solid var(--border); border-radius: 20px; padding: 10px 14px; font-size: 14px; background: var(--bg-page); outline: none; color: var(--text-main); font-weight: 600; }
   .chat-send-btn { background: none; border: none; color: var(--primary); font-size: 18px; cursor: pointer; padding: 0 4px; }
@@ -86,13 +91,22 @@
   #lightbox { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); z-index: 100; align-items: center; justify-content: center; }
   #lightbox img { max-width: 90%; max-height: 80vh; border-radius: 12px; }
 
+  /* ================= ⚡手機端黃金無死角排版優化 ================= */
   @media (max-width: 768px) {
-    body { padding: 6px; height: 100dvh; }
-    .layout-grid { grid-template-columns: 1fr; grid-template-rows: 3.5fr 6.5fr; gap: 10px; height: 100%; }
-    .col { gap: 10px; }
-    .phone-hide-list { display: none !important; }
-    .card { padding: 14px; }
-    .pie-chart-wrapper { min-height: 90px; }
+    body { padding: 8px; height: 100dvh; }
+    /* 嚴格執行上下屏比例切割，完全鎖死不滾動，不漏掉任何元素 */
+    .layout-grid { 
+      grid-template-columns: 1fr; 
+      grid-template-rows: 3.5fr 6.5fr; 
+      gap: 8px; 
+      height: 100%; 
+    }
+    .col { height: 100%; min-height: 0; }
+    .card { padding: 12px; height: 100%; }
+    .phone-hide-list { display: none !important; } /* 手機只看上半屏圖表，歷史卡片隱藏防錯亂 */
+    .pie-chart-wrapper { min-height: 0; height: 100%; }
+    .live-status-board { padding: 8px 12px; margin-bottom: 8px; gap: 4px; }
+    .live-board-val { font-size: 18px; }
   }
 </style>
 </head>
@@ -100,11 +114,11 @@
 
 <div class="layout-grid">
   
-  <!-- 左欄：LINE 對話記帳區 -->
+  <!-- 下半屏 / 左欄：LINE 對話記帳區 -->
   <div class="col">
-    <div class="card" style="height: 100%;">
+    <div class="card">
       
-      <!-- 智慧看板 -->
+      <!-- 雙幣看板 -->
       <div class="live-status-board">
         <div class="live-board-main">
           <div>
@@ -118,15 +132,15 @@
         </div>
         
         <div class="live-board-date-zone">
-          <span style="color: var(--text-muted); font-weight: 700;"><i class="fa-regular fa-calendar-check"></i> 記帳日期戳記：</span>
+          <span style="color: var(--text-muted); font-weight: 700;"><i class="fa-regular fa-calendar-check"></i> 記帳日期：</span>
           <input type="date" id="txn-date-picker" class="date-picker-input num-font">
         </div>
       </div>
       
-      <div class="card-title" style="margin-bottom:8px;">
+      <div class="card-title" style="margin-bottom:6px;">
         <span><i class="fa-regular fa-comment-dots" style="color:var(--primary); font-size:16px; margin-right:6px;"></i> 智慧對話記帳空間</span>
         <div style="font-size: 11px; color: var(--text-muted);">
-          設定匯率：<input type="number" id="rate-setting" value="0.212" step="0.001" style="width:48px; border:none; background:transparent; font-weight:700; color:var(--text-main);" onchange="App.updateRate()">
+          匯率：<input type="number" id="rate-setting" value="0.212" step="0.001" style="width:48px; border:none; background:transparent; font-weight:700; color:var(--text-main);" onchange="App.updateRate()">
         </div>
       </div>
       
@@ -161,18 +175,20 @@
     </div>
   </div>
 
-  <!-- 右欄：分析與明細 -->
+  <!-- 上半屏 / 右欄：分析與明細 -->
   <div class="col">
-    <div class="card" style="flex: 1.1;">
-      <div class="card-title" style="margin-bottom: 4px;">
+    <!-- 分類圖表卡片 -->
+    <div class="card">
+      <div class="card-title" style="margin-bottom: 2px;">
         <span>本月開銷統計圓環</span>
         <span class="num-font" style="font-size: 12px; color: var(--expense); font-weight: 700;" id="total-spent-text">總支出：¥ 0</span>
       </div>
       <div class="pie-chart-wrapper">
-        <div id="svg-chart-container"></div>
+        <div id="svg-chart-container" style="width:100%; height:100%; display:flex; justify-content:center; align-items:center;"></div>
       </div>
     </div>
 
+    <!-- 明細清單卡片 (手機版會自動隱藏，電腦版常駐) -->
     <div class="card phone-hide-list" style="flex: 1.2;">
       <div class="card-title">
         <span>歷史消費明細 (依日期分組)</span>
@@ -216,7 +232,7 @@
     { id: "business", name: "公務" }, { id: "fixed", name: "固定開銷" }
   ];
 
-  var STORAGE_KEY = "共榮對話記帳系統-v13";
+  var STORAGE_KEY = "共榮對話記帳系統-v14";
   var state = { txns: [], exchangeRate: 0.212, pendingTxn: null, currentPhoto: null };
 
   function loadInitial() {
@@ -252,15 +268,22 @@
     }
     var catTotals = {};
     state.txns.forEach(t => { catTotals[t.category] = (catTotals[t.category] || 0) + t.amount; });
-    var r = 42, c = 2 * Math.PI * r, currentOffset = 0;
-    var svgHtml = `<svg width="120" height="120" viewBox="0 0 120 120">`;
+    
+    // 適應手機高度動態調整 SVG 的大小大小
+    var isMobile = window.innerWidth <= 768;
+    var size = isMobile ? 90 : 120;
+    var r = isMobile ? 32 : 42;
+    var strokeW = isMobile ? 9 : 12;
+    var c = 2 * Math.PI * r, currentOffset = 0;
+    
+    var svgHtml = `<svg width="${size}" height="${size}" viewBox="0 0 100 100">`;
     CATEGORIES.forEach(cat => {
       var amt = catTotals[cat.id] || 0;
       if (amt > 0) {
         var pct = amt / total;
         var strokeLength = c * pct;
         var strokeOffset = c - strokeLength + currentOffset;
-        svgHtml += `<circle cx="60" cy="60" r="${r}" fill="none" stroke="${cat.color}" stroke-width="12" stroke-dasharray="${c}" stroke-dashoffset="${strokeOffset}" transform="rotate(-90 60 60)"></circle>`;
+        svgHtml += `<circle cx="50" cy="50" r="${r}" fill="none" stroke="${cat.color}" stroke-width="${strokeW}" stroke-dasharray="${c}" stroke-dashoffset="${strokeOffset}" transform="rotate(-90 50 50)"></circle>`;
         currentOffset -= strokeLength;
       }
     });
@@ -327,12 +350,9 @@
 
   function pad(n) { return n < 10 ? '0' + n : n; }
 
-  // 高階智慧提取器：專門在口語文本中過濾出真正的消費純數字
   function extractAmount(text) {
-    // 移除已識別的日期格式，避免如 07/01 的 07 產生干擾
     var clean = text.replace(/(\d{1,2})[月.\/-](\d{1,2})/g, "").replace(/(?:0)([1-9])([0-3][0-9])/g, "");
     clean = clean.replace(/昨天|前天|台幣|nt|twd|日幣|日圓|元|的/gi, "").trim();
-    
     var match = clean.match(/[\d.]+/);
     return match ? parseFloat(match[0]) : null;
   }
@@ -388,7 +408,6 @@
       var targetDate = document.getElementById("txn-date-picker").value;
       var dateInfoText = "";
 
-      // 1. 日期特徵隔離解析
       if (/昨天/.test(text)) {
         var d = new Date(targetDate); d.setDate(d.getDate() - 1);
         targetDate = d.toISOString().slice(0, 10);
@@ -400,7 +419,6 @@
       } else {
         var dateMatch = text.match(/(\d{1,2})[月.\/-](\d{1,2})/);
         if (!dateMatch) {
-          // 處理 0701 形式
           var fourDigitMatch = text.match(/\b(\d{2})(\d{2})\b/);
           if (fourDigitMatch) {
             var m = parseInt(fourDigitMatch[1]);
@@ -420,7 +438,6 @@
 
       document.getElementById("txn-date-picker").value = targetDate;
 
-      // 2. 核心金額智慧隔離提取
       var isTwd = /台幣|nt|twd/i.test(text);
       var rawAmount = extractAmount(text);
 
@@ -429,14 +446,12 @@
         return;
       }
 
-      // 3. 提取品項備註 (過濾掉日期與金額數字)
       var note = text.replace(/昨天|前天|台幣|nt|twd|日幣|日圓|元|的/gi, "")
                      .replace(/(\d{1,2})[月.\/-](\d{1,2})/g, "")
-                     .replace(/\b\d{4}\b/g, "") // 移除非金額的 4 位數日期
+                     .replace(/\b\d{4}\b/g, "") 
                      .replace(new RegExp(rawAmount, 'g'), "")
                      .replace(/\s+/g, " ").trim();
 
-      // 如果備註被清空了，就保留原分類
       var category = null;
       var foundCat = CATEGORIES.find(c => text.includes(c.name));
       if (foundCat) {
@@ -478,7 +493,7 @@
       localStorage.setItem(STORAGE_KEY, JSON.stringify({ txns: state.txns, exchangeRate: state.exchangeRate }));
       state.pendingTxn = null;
 
-      appendMessage("bot", `✅ 成功寫入！右側分析數據已同步即時更新。`);
+      appendMessage("bot", `✅ 已成功寫入！上半屏圖表與金額已即時同步更新。`);
       
       document.getElementById("txn-date-picker").value = new Date().toISOString().slice(0, 10);
       document.getElementById("live-jpy-board").textContent = "¥ 0";
@@ -502,6 +517,7 @@
   };
 
   loadInitial();
+  window.addEventListener('resize', renderAll); // 轉向或拉伸時自動校正圓環尺寸
 })();
 </script>
 </body>
