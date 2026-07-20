@@ -102,6 +102,10 @@
   .rank-tab-group { display: flex; gap: 4px; background: var(--bg-page); border-radius: 10px; padding: 3px; }
   .rank-tab-btn { background: none; border: none; font-size: 11px; font-weight: 700; color: var(--text-muted); padding: 5px 10px; border-radius: 8px; cursor: pointer; }
   .rank-tab-btn.active { background: var(--surface); color: var(--text-main); box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  .rank-detail-list { margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--border); display: flex; flex-direction: column; gap: 6px; }
+  .rank-detail-row { display: flex; justify-content: space-between; align-items: baseline; font-size: 12px; gap: 8px; }
+  .rank-detail-note { color: var(--text-main); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rank-detail-meta { color: var(--text-muted); font-weight: 600; flex-shrink: 0; font-size: 11px; }
 
   /* 明細列表 */
   .log-list { overflow-y: auto; flex: 1; min-height: 0; }
@@ -212,7 +216,8 @@
               1:1 分離式修角圓環重構完畢！已全數移除總清空按鈕以防止悲劇發生。<br><br>
               💡 <b>萬用口語快速輸入：</b><br>
               - `07/01 儲值日幣 5000 西瓜卡`<br>
-              - `7月5日 拉麵 1350`
+              - `7月5日 拉麵 1350`<br>
+              - `昨天 拉麵 1350`／`明天 交通 500`
             </div>
           </div>
         </div>
@@ -386,6 +391,7 @@
   var state = {
     txns: [], exchangeRate: 0.212, pendingTxn: null, currentPhoto: null, activeTab: "chat",
     rankViewMode: "category",
+    expandedRanks: {},
     calYear: todayObj.getFullYear(),
     calMonth: todayObj.getMonth(),
     selectedDate: todayObj.toISOString().slice(0, 10)
@@ -525,19 +531,31 @@
       var percentage = totalSpent > 0 ? Math.round((item.amount / totalSpent) * 100) : 0;
       var barWidth = Math.round((item.amount / maxAmount) * 100);
       var topupNotice = cat.id === 'topup' ? ' <span style="font-size:10px; color:var(--primary); font-weight:normal;">(儲值預備)</span>' : '';
+      var expandKey = "cat:" + cat.id;
+      var isOpen = !!state.expandedRanks[expandKey];
+
+      var detailHtml = "";
+      if (isOpen) {
+        var items = state.txns.filter(function(t) { return t.category === cat.id; })
+                               .sort(function(a, b) { return (b.date + (b.time||"")).localeCompare(a.date + (a.time||"")); });
+        detailHtml = '<div class="rank-detail-list">' + items.map(function(t) {
+          return '<div class="rank-detail-row"><span class="rank-detail-note">' + (t.note || cat.name) + '</span><span class="rank-detail-meta num-font">' + t.date + ' · ¥' + t.amount.toLocaleString() + '</span></div>';
+        }).join("") + '</div>';
+      }
 
       return `
         <div class="rank-item">
-          <div class="rank-item-top">
-            <span class="rank-left">${cat.icon} ${cat.name}${topupNotice}</span>
+          <div class="rank-item-top" onclick="App.toggleRankExpand('${expandKey}')" style="cursor:pointer;">
+            <span class="rank-left"><i class="fa-solid fa-chevron-${isOpen ? 'down' : 'right'}" style="font-size:9px; color:var(--text-muted); margin-right:2px;"></i>${cat.icon} ${cat.name}${topupNotice}</span>
             <div class="rank-right">
               <div style="font-size:14px; font-weight:800;" class="num-font">¥ ${item.amount.toLocaleString()}</div>
               <div style="font-size:10.5px; color:var(--text-muted); font-weight:600;" class="num-font">${percentage}% · 折合 NT$ ${Math.round(item.amount * state.exchangeRate).toLocaleString()}</div>
             </div>
           </div>
-          <div class="rank-bar-bg">
+          <div class="rank-bar-bg" onclick="App.toggleRankExpand('${expandKey}')" style="cursor:pointer;">
             <div class="rank-bar-fill" style="width: ${barWidth}%; background-color: ${cat.color};"></div>
           </div>
+          ${detailHtml}
         </div>
       `;
     }).join("");
@@ -578,19 +596,33 @@
       var acc = item.acc;
       var percentage = totalSpent > 0 ? Math.round((item.amount / totalSpent) * 100) : 0;
       var barWidth = Math.round((item.amount / maxAmount) * 100);
+      var expandKey = "acc:" + acc.id;
+      var isOpen = !!state.expandedRanks[expandKey];
+
+      var detailHtml = "";
+      if (isOpen) {
+        var items = state.txns.filter(function(t) { return (t.account || "cash") === acc.id; })
+                               .sort(function(a, b) { return (b.date + (b.time||"")).localeCompare(a.date + (a.time||"")); });
+        detailHtml = '<div class="rank-detail-list">' + items.map(function(t) {
+          var c = CATEGORIES.find(function(x) { return x.id === t.category; });
+          var label = t.note || (c ? c.name : "其他");
+          return '<div class="rank-detail-row"><span class="rank-detail-note">' + label + '</span><span class="rank-detail-meta num-font">' + t.date + ' · ¥' + t.amount.toLocaleString() + '</span></div>';
+        }).join("") + '</div>';
+      }
 
       return `
         <div class="rank-item">
-          <div class="rank-item-top">
-            <span class="rank-left">${acc.icon} ${acc.name} <span style="font-size:10px; color:var(--text-muted); font-weight:normal;">(${item.count}筆)</span></span>
+          <div class="rank-item-top" onclick="App.toggleRankExpand('${expandKey}')" style="cursor:pointer;">
+            <span class="rank-left"><i class="fa-solid fa-chevron-${isOpen ? 'down' : 'right'}" style="font-size:9px; color:var(--text-muted); margin-right:2px;"></i>${acc.icon} ${acc.name} <span style="font-size:10px; color:var(--text-muted); font-weight:normal;">(${item.count}筆)</span></span>
             <div class="rank-right">
               <div style="font-size:14px; font-weight:800;" class="num-font">¥ ${item.amount.toLocaleString()}</div>
               <div style="font-size:10.5px; color:var(--text-muted); font-weight:600;" class="num-font">${percentage}% · 折合 NT$ ${Math.round(item.amount * state.exchangeRate).toLocaleString()}</div>
             </div>
           </div>
-          <div class="rank-bar-bg">
+          <div class="rank-bar-bg" onclick="App.toggleRankExpand('${expandKey}')" style="cursor:pointer;">
             <div class="rank-bar-fill" style="width: ${barWidth}%; background-color: ${acc.color};"></div>
           </div>
+          ${detailHtml}
         </div>
       `;
     }).join("");
@@ -716,8 +748,10 @@
   function pad(n) { return n < 10 ? '0' + n : n; }
 
   function extractAmount(text) {
-    var clean = text.replace(/(\d{1,2})[月.\/-](\d{1,2})/g, "").replace(/(?:0)([1-9])([0-3][0-9])/g, "");
-    clean = clean.replace(/昨天|前天|台幣|nt|twd|日幣|日圓|元|的/gi, "").trim();
+    // 只有明確的日期格式（7/5、7-5、7月5日）才視為日期，避免把「12.5」這種小數金額誤判成12月5日
+    var clean = text.replace(/(\d{1,2})[月\/-](\d{1,2})/g, "");
+    clean = clean.replace(/今天|明天|後天|昨天|前天|台幣|nt|twd|日幣|日圓|元|的/gi, "").trim();
+    clean = clean.replace(/,/g, ""); // 支援「1,200」這種千分位逗號寫法
     var match = clean.match(/[\d.]+/);
     return match ? parseFloat(match[0]) : null;
   }
@@ -742,6 +776,11 @@
   }
 
   window.App = {
+    toggleRankExpand: function (key) {
+      state.expandedRanks[key] = !state.expandedRanks[key];
+      var totalJpy = state.txns.reduce(function (s, t) { return s + t.amount; }, 0);
+      renderAnalysisReport(totalJpy);
+    },
     switchChartView: function (mode) {
       document.getElementById("chart-tab-donut").classList.toggle("active", mode === "donut");
       document.getElementById("chart-tab-bar").classList.toggle("active", mode === "bar");
@@ -877,39 +916,47 @@
     },
     processUserMessage: function() {
       var inputEl = document.getElementById("chat-input-field");
-      var text = inputEl.value.trim();
-      if (!text) return;
-      
-      appendMessage("user", text);
+      var rawInput = inputEl.value.trim();
+      if (!rawInput) return;
+
+      appendMessage("user", rawInput);
       inputEl.value = "";
+
+      // 正規化：把「1,200」這種千分位逗號去掉，避免後面把「1」「200」拆成兩截誤判
+      var text = rawInput.replace(/(\d),(?=\d)/g, "$1");
+      var yearNow = new Date().getFullYear();
 
       var targetDate = document.getElementById("txn-date-picker").value;
       var dateInfoText = "";
+      var realToday = new Date(); // 相對日期一律以「真正的今天」為基準，避免跟目前選取日期疊加造成混淆
 
-      if (/昨天/.test(text)) {
-        var d = new Date(targetDate); d.setDate(d.getDate() - 1);
+      if (/今天/.test(text)) {
+        targetDate = realToday.toISOString().slice(0, 10);
+        dateInfoText = " (今天)";
+      } else if (/明天/.test(text)) {
+        var d = new Date(realToday); d.setDate(d.getDate() + 1);
+        targetDate = d.toISOString().slice(0, 10);
+        dateInfoText = " (明天)";
+      } else if (/後天/.test(text)) {
+        var d = new Date(realToday); d.setDate(d.getDate() + 2);
+        targetDate = d.toISOString().slice(0, 10);
+        dateInfoText = " (後天)";
+      } else if (/昨天/.test(text)) {
+        var d = new Date(realToday); d.setDate(d.getDate() - 1);
         targetDate = d.toISOString().slice(0, 10);
         dateInfoText = " (昨天)";
       } else if (/前天/.test(text)) {
-        var d = new Date(targetDate); d.setDate(d.getDate() - 2);
+        var d = new Date(realToday); d.setDate(d.getDate() - 2);
         targetDate = d.toISOString().slice(0, 10);
         dateInfoText = " (前天)";
       } else {
-        var dateMatch = text.match(/(\d{1,2})[月.\/-](\d{1,2})/);
-        if (!dateMatch) {
-          var fourDigitMatch = text.match(/\b(\d{2})(\d{2})\b/);
-          if (fourDigitMatch) {
-            var m = parseInt(fourDigitMatch[1]);
-            var day = parseInt(fourDigitMatch[2]);
-            if (m >= 1 && m <= 12 && day >= 1 && day <= 31) {
-              targetDate = "2026-" + pad(m) + "-" + pad(day);
-              dateInfoText = " (自動跳轉至 " + m + "/" + day + ")";
-            }
-          }
-        } else if (dateMatch) {
+        // 只認「7/5」「7-5」「7月5日」這種明確帶分隔符的日期格式，
+        // 不再用「猜4位數字像不像日期」的方式判斷，避免把金額（例如1015、0730）誤判成日期
+        var dateMatch = text.match(/(\d{1,2})[月\/-](\d{1,2})/);
+        if (dateMatch) {
           var m = pad(parseInt(dateMatch[1]));
           var day = pad(parseInt(dateMatch[2]));
-          targetDate = "2026-" + m + "-" + day;
+          targetDate = yearNow + "-" + m + "-" + day;
           dateInfoText = " (自動跳轉至 " + m + "/" + day + ")";
         }
       }
@@ -924,10 +971,10 @@
         return;
       }
 
-      var note = text.replace(/昨天|前天|台幣|nt|twd|日幣|日圓|元|的/gi, "")
-                     .replace(/(\d{1,2})[月.\/-](\d{1,2})/g, "")
-                     .replace(/\b\d{4}\b/g, "") 
-                     .replace(new RegExp(rawAmount, 'g'), "")
+      var amountEscaped = String(rawAmount).replace(/\./g, "\\.");
+      var note = text.replace(/今天|明天|後天|昨天|前天|台幣|nt|twd|日幣|日圓|元|的/gi, "")
+                     .replace(/(\d{1,2})[月\/-](\d{1,2})/g, "")
+                     .replace(new RegExp(amountEscaped, 'g'), "")
                      .replace(/\s+/g, " ").trim();
 
       var category = null;
@@ -1036,3 +1083,4 @@
 </script>
 </body>
 </html>
+
