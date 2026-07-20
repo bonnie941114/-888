@@ -82,9 +82,17 @@
   .chat-camera-btn { color: var(--text-muted); font-size: 18px; cursor: pointer; }
 
   /* 圖表與排行分析 */
-  .pie-chart-wrapper { display: flex; justify-content: center; align-items: center; height: 180px; flex-shrink: 0; position: relative; margin-bottom: 8px; }
-  .analysis-rank-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-top: 8px; }
+  .pie-chart-wrapper { display: flex; justify-content: center; align-items: center; flex: 1; min-height: 140px; flex-shrink: 0; position: relative; margin-bottom: 8px; }
+  .analysis-rank-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-top: 8px; min-height: 0; }
   .analysis-rank-list::-webkit-scrollbar { display: none; }
+
+  /* 分頁切換籤（圓環/長條、日曆/明細 共用） */
+  .view-tab-group { display: flex; gap: 4px; background: var(--bg-page); border-radius: 12px; padding: 4px; margin-bottom: 14px; flex-shrink: 0; }
+  .view-tab-btn { flex: 1; background: none; border: none; font-size: 12.5px; font-weight: 700; color: var(--text-muted); padding: 8px 6px; border-radius: 9px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
+  .view-tab-btn.active { background: var(--surface); color: var(--text-main); box-shadow: 0 2px 6px rgba(0,0,0,0.06); }
+  .view-tab-btn i { font-size: 12px; }
+  .chart-view-panel { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow-y: auto; }
+  .chart-view-panel::-webkit-scrollbar { display: none; }
   .rank-item { display: flex; flex-direction: column; gap: 8px; padding: 12px 14px; background: #F8FAFC; border-radius: 14px; border: 1px solid var(--border); }
   .rank-item-top { display: flex; align-items: baseline; justify-content: space-between; }
   .rank-left { display: flex; align-items: center; gap: 6px; font-size: 13.5px; font-weight: 700; }
@@ -115,9 +123,7 @@
   #lightbox { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); z-index: 100; align-items: center; justify-content: center; }
   #lightbox img { max-width: 90%; max-height: 80vh; border-radius: 12px; }
 
-  /* 日曆檢視卡片 */
-  .calendar-card { height: auto !important; flex: 0 0 auto; margin-bottom: 16px; }
-  .list-card { flex: 1; min-height: 0; }
+  /* 日曆檢視 */
   .cal-nav { display: flex; align-items: center; gap: 10px; }
   .cal-nav-btn { background: var(--bg-page); border: 1px solid var(--border); border-radius: 10px; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-main); font-size: 11px; }
   .cal-nav-btn:hover { background: var(--border); }
@@ -235,28 +241,34 @@
     </div>
   </div>
 
-  <!-- 面板二：1:1 分離式高級圓環圖表 -->
+  <!-- 面板二：開銷統計（圓環圖／長條圖 切換） -->
   <div class="col" id="panel-chart">
     <div class="card">
       <div class="card-title">
-        <span>本月開銷統計圓環</span>
+        <span>開銷統計</span>
         <span class="num-font" style="font-size: 13px; color: var(--expense); font-weight: 700;" id="total-spent-text">總支出：¥ 0</span>
       </div>
-      
-      <!-- 完美留白圓環圖表區 -->
-      <div class="pie-chart-wrapper">
-        <div id="svg-chart-container" style="width:100%; height:100%; display:flex; justify-content:center; align-items:center;"></div>
+
+      <div class="view-tab-group">
+        <button class="view-tab-btn active" id="chart-tab-donut" onclick="App.switchChartView('donut')"><i class="fa-solid fa-circle-notch"></i> 圓環圖</button>
+        <button class="view-tab-btn" id="chart-tab-bar" onclick="App.switchChartView('bar')"><i class="fa-solid fa-chart-simple"></i> 長條圖</button>
       </div>
-      
-      <!-- 📊 具體開銷排行榜數據分析大看板 -->
-      <div class="card-title" style="margin-bottom:6px; border-top:1px dashed var(--border); padding-top:10px;">
-         <span>📋 具體開銷排行分析</span>
-         <div class="rank-tab-group">
-           <button class="rank-tab-btn active" id="rank-tab-cat" onclick="App.switchRankView('category')">依分類</button>
-           <button class="rank-tab-btn" id="rank-tab-acc" onclick="App.switchRankView('account')">依支付方式</button>
-         </div>
+
+      <!-- 圓環圖檢視 -->
+      <div id="donut-view-container" class="chart-view-panel">
+        <div class="pie-chart-wrapper" style="flex:1;">
+          <div id="svg-chart-container" style="width:100%; height:100%; display:flex; justify-content:center; align-items:center;"></div>
+        </div>
       </div>
-      <div class="analysis-rank-list" id="analysis-rank-container"></div>
+
+      <!-- 長條圖檢視 -->
+      <div id="bar-view-container" class="chart-view-panel" style="display:none;">
+        <div class="rank-tab-group" style="align-self:center; margin-bottom:10px;">
+          <button class="rank-tab-btn active" id="rank-tab-cat" onclick="App.switchRankView('category')">依分類</button>
+          <button class="rank-tab-btn" id="rank-tab-acc" onclick="App.switchRankView('account')">依支付方式</button>
+        </div>
+        <div class="analysis-rank-list" id="analysis-rank-container"></div>
+      </div>
 
       <div style="font-size: 11px; color: var(--text-muted); text-align: center; margin-top: 10px; flex-shrink:0;">
         匯率設定：<input type="number" id="rate-setting" value="0.212" step="0.001" style="width:48px; border:none; background:transparent; font-weight:700; color:var(--text-main); outline:none;" onchange="App.updateRate()">
@@ -266,64 +278,72 @@
 
   <!-- 面板三：消費明細手帳 (已全面啟用嚴格防呆鎖定) -->
   <div class="col" id="panel-list">
-    <!-- 記帳日曆卡片 -->
-    <div class="card calendar-card">
+    <div class="card">
       <div class="card-title">
-        <span>記帳日曆</span>
-        <div class="cal-nav">
+        <span>消費明細</span>
+      </div>
+
+      <div class="view-tab-group">
+        <button class="view-tab-btn active" id="list-tab-history" onclick="App.switchListView('history')"><i class="fa-solid fa-list-ul"></i> 明細清單</button>
+        <button class="view-tab-btn" id="list-tab-calendar" onclick="App.switchListView('calendar')"><i class="fa-regular fa-calendar"></i> 日曆檢視</button>
+      </div>
+
+      <!-- 明細清單檢視：預設顯示，可直接檢視／編輯／刪除每一筆 -->
+      <div id="history-view-container" class="chart-view-panel">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-shrink:0;">
+          <span onclick="App.triggerSecretClick()" style="cursor:pointer; user-select:none; font-size:12px; color:var(--text-muted); font-weight:700;">依日期分組</span>
+          <span style="font-size: 10px; color: var(--text-muted); font-weight: normal;">[單筆手動刪除機制已啟用]</span>
+        </div>
+        <div class="log-list" id="log-container"></div>
+      </div>
+
+      <!-- 日曆檢視：月曆、每日總結、區間總結 -->
+      <div id="calendar-view-container" class="chart-view-panel" style="display:none;">
+        <div class="cal-nav" style="align-self:center; margin-bottom:8px;">
           <div class="cal-nav-btn" onclick="App.prevMonth()"><i class="fa-solid fa-chevron-left"></i></div>
           <div class="cal-month-label num-font" id="cal-month-label"></div>
           <div class="cal-nav-btn" onclick="App.nextMonth()"><i class="fa-solid fa-chevron-right"></i></div>
         </div>
-      </div>
-      <div class="cal-weekday-row">
-        <div class="cal-weekday">日</div><div class="cal-weekday">一</div><div class="cal-weekday">二</div>
-        <div class="cal-weekday">三</div><div class="cal-weekday">四</div><div class="cal-weekday">五</div><div class="cal-weekday">六</div>
-      </div>
-      <div class="cal-grid" id="cal-grid-container"></div>
-
-      <div class="day-summary-box">
-        <div class="day-summary-title">
-          <span id="day-summary-label">今日總結</span>
-          <button class="filter-toggle-btn" onclick="App.jumpToday()">回到今天</button>
+        <div class="cal-weekday-row">
+          <div class="cal-weekday">日</div><div class="cal-weekday">一</div><div class="cal-weekday">二</div>
+          <div class="cal-weekday">三</div><div class="cal-weekday">四</div><div class="cal-weekday">五</div><div class="cal-weekday">六</div>
         </div>
-        <div class="day-summary-stats">
-          <div>
-            <div class="day-summary-amt num-font" id="day-summary-amt">¥ 0</div>
-            <div class="log-twd-val num-font" id="day-summary-twd">≈ NT$ 0</div>
+        <div class="cal-grid" id="cal-grid-container"></div>
+
+        <div class="day-summary-box">
+          <div class="day-summary-title">
+            <span id="day-summary-label">今日總結</span>
+            <button class="filter-toggle-btn" onclick="App.jumpToday()">回到今天</button>
           </div>
-          <div class="day-summary-count" id="day-summary-count">共 0 筆</div>
-        </div>
-      </div>
-
-      <!-- 區間總結：自選起訖日期查看該區間的花費總覽 -->
-      <div class="day-summary-box">
-        <div class="day-summary-title">
-          <span>區間總結</span>
-          <button class="filter-toggle-btn" onclick="App.setRangeThisMonth()">設為本月</button>
-        </div>
-        <div class="range-picker-row">
-          <input type="date" id="range-start-input" class="range-date-input num-font" onchange="App.calcRangeSummary()">
-          <span class="range-sep">～</span>
-          <input type="date" id="range-end-input" class="range-date-input num-font" onchange="App.calcRangeSummary()">
-        </div>
-        <div class="day-summary-stats">
-          <div>
-            <div class="day-summary-amt num-font" id="range-summary-amt">¥ 0</div>
-            <div class="log-twd-val num-font" id="range-summary-twd">≈ NT$ 0</div>
+          <div class="day-summary-stats">
+            <div>
+              <div class="day-summary-amt num-font" id="day-summary-amt">¥ 0</div>
+              <div class="log-twd-val num-font" id="day-summary-twd">≈ NT$ 0</div>
+            </div>
+            <div class="day-summary-count" id="day-summary-count">共 0 筆</div>
           </div>
-          <div class="day-summary-count" id="range-summary-count">共 0 筆</div>
+        </div>
+
+        <!-- 區間總結：自選起訖日期查看該區間的花費總覽 -->
+        <div class="day-summary-box">
+          <div class="day-summary-title">
+            <span>區間總結</span>
+            <button class="filter-toggle-btn" onclick="App.setRangeThisMonth()">設為本月</button>
+          </div>
+          <div class="range-picker-row">
+            <input type="date" id="range-start-input" class="range-date-input num-font" onchange="App.calcRangeSummary()">
+            <span class="range-sep">～</span>
+            <input type="date" id="range-end-input" class="range-date-input num-font" onchange="App.calcRangeSummary()">
+          </div>
+          <div class="day-summary-stats">
+            <div>
+              <div class="day-summary-amt num-font" id="range-summary-amt">¥ 0</div>
+              <div class="log-twd-val num-font" id="range-summary-twd">≈ NT$ 0</div>
+            </div>
+            <div class="day-summary-count" id="range-summary-count">共 0 筆</div>
+          </div>
         </div>
       </div>
-    </div>
-
-    <!-- 歷史消費明細清單 -->
-    <div class="card list-card">
-      <div class="card-title">
-        <span onclick="App.triggerSecretClick()" style="cursor:pointer; user-select:none;">歷史消費明細 (依日期分組)</span>
-        <span style="font-size: 10px; color: var(--text-muted); font-weight: normal;">[單筆手動刪除機制已啟用]</span>
-      </div>
-      <div class="log-list" id="log-container"></div>
     </div>
   </div>
 
@@ -722,6 +742,18 @@
   }
 
   window.App = {
+    switchChartView: function (mode) {
+      document.getElementById("chart-tab-donut").classList.toggle("active", mode === "donut");
+      document.getElementById("chart-tab-bar").classList.toggle("active", mode === "bar");
+      document.getElementById("donut-view-container").style.display = mode === "donut" ? "flex" : "none";
+      document.getElementById("bar-view-container").style.display = mode === "bar" ? "flex" : "none";
+    },
+    switchListView: function (mode) {
+      document.getElementById("list-tab-history").classList.toggle("active", mode === "history");
+      document.getElementById("list-tab-calendar").classList.toggle("active", mode === "calendar");
+      document.getElementById("history-view-container").style.display = mode === "history" ? "flex" : "none";
+      document.getElementById("calendar-view-container").style.display = mode === "calendar" ? "flex" : "none";
+    },
     calcRangeSummary: function () {
       var startVal = document.getElementById("range-start-input").value;
       var endVal = document.getElementById("range-end-input").value;
