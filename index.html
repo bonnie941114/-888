@@ -29,7 +29,10 @@
   .num-font { font-family: 'Manrope', sans-serif; }
 
   /* ================= 國際 App 級底部分頁架構 ================= */
-  .layout-grid { max-width: 1200px; margin: 0 auto; width: 100%; display: grid; grid-template-columns: 1.2fr 1.1fr; gap: 24px; flex: 1; min-height: 0; padding: 16px; }
+  .layout-grid { max-width: 1200px; margin: 0 auto; width: 100%; display: grid; grid-template-columns: 1.2fr 1.1fr; grid-template-rows: 1.3fr 1fr; grid-template-areas: "chat chart" "list list"; gap: 24px; flex: 1; min-height: 0; padding: 16px; }
+  #panel-chat { grid-area: chat; }
+  #panel-chart { grid-area: chart; }
+  #panel-list { grid-area: list; }
   .col { display: flex; flex-direction: column; height: 100%; min-height: 0; }
   
   .phone-bottom-nav { display: none; background: var(--surface); border-top: 1px solid var(--border); height: 64px; padding-bottom: env(safe-area-inset-bottom); justify-content: space-around; align-items: center; flex-shrink: 0; z-index: 10; }
@@ -82,11 +85,12 @@
   .pie-chart-wrapper { display: flex; justify-content: center; align-items: center; height: 180px; flex-shrink: 0; position: relative; margin-bottom: 8px; }
   .analysis-rank-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-top: 8px; }
   .analysis-rank-list::-webkit-scrollbar { display: none; }
-  .rank-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: #F8FAFC; border-radius: 14px; border: 1px solid var(--border); }
-  .rank-left { display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 700; }
-  .rank-bar-bg { width: 60px; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; margin-left: 6px; display: inline-block; vertical-align: middle; }
-  .rank-bar-fill { height: 100%; border-radius: 3px; }
+  .rank-item { display: flex; flex-direction: column; gap: 8px; padding: 12px 14px; background: #F8FAFC; border-radius: 14px; border: 1px solid var(--border); }
+  .rank-item-top { display: flex; align-items: baseline; justify-content: space-between; }
+  .rank-left { display: flex; align-items: center; gap: 6px; font-size: 13.5px; font-weight: 700; }
   .rank-right { text-align: right; }
+  .rank-bar-bg { width: 100%; height: 10px; background: var(--border); border-radius: 6px; overflow: hidden; }
+  .rank-bar-fill { height: 100%; border-radius: 6px; transition: width 0.3s; }
   .rank-tab-group { display: flex; gap: 4px; background: var(--bg-page); border-radius: 10px; padding: 3px; }
   .rank-tab-btn { background: none; border: none; font-size: 11px; font-weight: 700; color: var(--text-muted); padding: 5px 10px; border-radius: 8px; cursor: pointer; }
   .rank-tab-btn.active { background: var(--surface); color: var(--text-main); box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
@@ -136,6 +140,10 @@
   .day-summary-amt { font-size: 22px; font-weight: 800; color: var(--expense); }
   .day-summary-count { font-size: 11px; color: var(--text-muted); font-weight: 600; }
   .filter-toggle-btn { background: none; border: none; color: var(--primary); font-size: 11.5px; font-weight: 700; cursor: pointer; }
+  .range-picker-row { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; }
+  .range-date-input { flex: 1; min-width: 0; border: 1px solid var(--border); background: var(--surface); border-radius: 10px; padding: 7px 8px; font-size: 12px; font-weight: 700; color: var(--text-main); outline: none; }
+  .range-date-input:focus { border-color: var(--primary); }
+  .range-sep { font-size: 12px; color: var(--text-muted); flex-shrink: 0; }
   .cal-flash { animation: calFlash 1.1s ease; }
   @keyframes calFlash { 0% { background: #FDF3E7; } 100% { background: transparent; } }
 
@@ -287,6 +295,26 @@
           <div class="day-summary-count" id="day-summary-count">共 0 筆</div>
         </div>
       </div>
+
+      <!-- 區間總結：自選起訖日期查看該區間的花費總覽 -->
+      <div class="day-summary-box">
+        <div class="day-summary-title">
+          <span>區間總結</span>
+          <button class="filter-toggle-btn" onclick="App.setRangeThisMonth()">設為本月</button>
+        </div>
+        <div class="range-picker-row">
+          <input type="date" id="range-start-input" class="range-date-input num-font" onchange="App.calcRangeSummary()">
+          <span class="range-sep">～</span>
+          <input type="date" id="range-end-input" class="range-date-input num-font" onchange="App.calcRangeSummary()">
+        </div>
+        <div class="day-summary-stats">
+          <div>
+            <div class="day-summary-amt num-font" id="range-summary-amt">¥ 0</div>
+            <div class="log-twd-val num-font" id="range-summary-twd">≈ NT$ 0</div>
+          </div>
+          <div class="day-summary-count" id="range-summary-count">共 0 筆</div>
+        </div>
+      </div>
     </div>
 
     <!-- 歷史消費明細清單 -->
@@ -346,6 +374,7 @@
 
   function pad2(n) { return n < 10 ? "0" + n : "" + n; }
   function todayStr() { return new Date().toISOString().slice(0, 10); }
+  function toDateStr(d) { return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()); }
 
   function loadInitial() {
     var todayStr = new Date().toISOString().slice(0, 10);
@@ -360,7 +389,12 @@
       } catch(e){}
     }
     document.getElementById("rate-setting").value = state.exchangeRate;
-    
+
+    var mStart = new Date(state.calYear, state.calMonth, 1);
+    var mEnd = new Date(state.calYear, state.calMonth + 1, 0);
+    document.getElementById("range-start-input").value = toDateStr(mStart);
+    document.getElementById("range-end-input").value = toDateStr(mEnd);
+
     handleResponsiveLayout();
     renderAll();
   }
@@ -474,15 +508,15 @@
 
       return `
         <div class="rank-item">
-          <div class="rank-left">
-            <span>${cat.icon} ${cat.name}${topupNotice}</span>
-            <div class="rank-bar-bg">
-              <div class="rank-bar-fill" style="width: ${barWidth}%; background-color: ${cat.color};"></div>
+          <div class="rank-item-top">
+            <span class="rank-left">${cat.icon} ${cat.name}${topupNotice}</span>
+            <div class="rank-right">
+              <div style="font-size:14px; font-weight:800;" class="num-font">¥ ${item.amount.toLocaleString()}</div>
+              <div style="font-size:10.5px; color:var(--text-muted); font-weight:600;" class="num-font">${percentage}% · 折合 NT$ ${Math.round(item.amount * state.exchangeRate).toLocaleString()}</div>
             </div>
           </div>
-          <div class="rank-right">
-            <div style="font-size:14px; font-weight:800;" class="num-font">¥ ${item.amount.toLocaleString()}</div>
-            <div style="font-size:10.5px; color:var(--text-muted); font-weight:600;" class="num-font">${percentage}% · 折合 NT$ ${Math.round(item.amount * state.exchangeRate).toLocaleString()}</div>
+          <div class="rank-bar-bg">
+            <div class="rank-bar-fill" style="width: ${barWidth}%; background-color: ${cat.color};"></div>
           </div>
         </div>
       `;
@@ -527,15 +561,15 @@
 
       return `
         <div class="rank-item">
-          <div class="rank-left">
-            <span>${acc.icon} ${acc.name} <span style="font-size:10px; color:var(--text-muted); font-weight:normal;">(${item.count}筆)</span></span>
-            <div class="rank-bar-bg">
-              <div class="rank-bar-fill" style="width: ${barWidth}%; background-color: ${acc.color};"></div>
+          <div class="rank-item-top">
+            <span class="rank-left">${acc.icon} ${acc.name} <span style="font-size:10px; color:var(--text-muted); font-weight:normal;">(${item.count}筆)</span></span>
+            <div class="rank-right">
+              <div style="font-size:14px; font-weight:800;" class="num-font">¥ ${item.amount.toLocaleString()}</div>
+              <div style="font-size:10.5px; color:var(--text-muted); font-weight:600;" class="num-font">${percentage}% · 折合 NT$ ${Math.round(item.amount * state.exchangeRate).toLocaleString()}</div>
             </div>
           </div>
-          <div class="rank-right">
-            <div style="font-size:14px; font-weight:800;" class="num-font">¥ ${item.amount.toLocaleString()}</div>
-            <div style="font-size:10.5px; color:var(--text-muted); font-weight:600;" class="num-font">${percentage}% · 折合 NT$ ${Math.round(item.amount * state.exchangeRate).toLocaleString()}</div>
+          <div class="rank-bar-bg">
+            <div class="rank-bar-fill" style="width: ${barWidth}%; background-color: ${acc.color};"></div>
           </div>
         </div>
       `;
@@ -597,6 +631,9 @@
   function renderAll() {
     renderCalendar();
     renderDaySummary();
+    if (document.getElementById("range-start-input") && document.getElementById("range-start-input").value) {
+      App.calcRangeSummary();
+    }
 
     var totalJpy = state.txns.reduce(function(s, t) { return s + t.amount; }, 0);
     document.getElementById("total-spent-text").textContent = "總支出：¥ " + totalJpy.toLocaleString();
@@ -685,6 +722,26 @@
   }
 
   window.App = {
+    calcRangeSummary: function () {
+      var startVal = document.getElementById("range-start-input").value;
+      var endVal = document.getElementById("range-end-input").value;
+      if (!startVal || !endVal) return;
+      if (startVal > endVal) { var tmp = startVal; startVal = endVal; endVal = tmp; }
+
+      var list = state.txns.filter(function (t) { return t.date >= startVal && t.date <= endVal; });
+      var total = list.reduce(function (s, t) { return s + t.amount; }, 0);
+
+      document.getElementById("range-summary-amt").textContent = "¥ " + total.toLocaleString();
+      document.getElementById("range-summary-twd").textContent = "≈ NT$ " + Math.round(total * state.exchangeRate).toLocaleString();
+      document.getElementById("range-summary-count").textContent = "共 " + list.length + " 筆";
+    },
+    setRangeThisMonth: function () {
+      var mStart = new Date(state.calYear, state.calMonth, 1);
+      var mEnd = new Date(state.calYear, state.calMonth + 1, 0);
+      document.getElementById("range-start-input").value = toDateStr(mStart);
+      document.getElementById("range-end-input").value = toDateStr(mEnd);
+      App.calcRangeSummary();
+    },
     switchRankView: function (mode) {
       state.rankViewMode = mode;
       document.getElementById("rank-tab-cat").classList.toggle("active", mode === "category");
