@@ -82,9 +82,18 @@
   .chat-camera-btn { color: var(--text-muted); font-size: 18px; cursor: pointer; }
 
   /* 圖表與排行分析 */
-  .pie-chart-wrapper { display: flex; justify-content: center; align-items: center; flex: 1; min-height: 140px; flex-shrink: 0; position: relative; margin-bottom: 8px; }
+  .pie-chart-wrapper { display: flex; justify-content: center; align-items: center; flex: 0 0 auto; height: 170px; position: relative; margin-bottom: 4px; }
   .analysis-rank-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-top: 8px; min-height: 0; }
   .analysis-rank-list::-webkit-scrollbar { display: none; }
+  .donut-note-list { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; padding-top: 8px; border-top: 1px dashed var(--border); }
+  .donut-note-list::-webkit-scrollbar { display: none; }
+  .donut-note-row { display: flex; align-items: center; gap: 10px; padding: 8px 4px; border-bottom: 1px solid var(--border); }
+  .donut-note-row:last-child { border-bottom: none; }
+  .donut-note-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .donut-note-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+  .donut-note-title { font-size: 12.5px; font-weight: 700; color: var(--text-main); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .donut-note-meta { font-size: 10.5px; color: var(--text-muted); font-weight: 500; }
+  .donut-note-amt { font-size: 12.5px; font-weight: 800; color: var(--text-main); flex-shrink: 0; }
 
   /* 分頁切換籤（圓環/長條、日曆/明細 共用） */
   .view-tab-group { display: flex; gap: 4px; background: var(--bg-page); border-radius: 12px; padding: 4px; margin-bottom: 14px; flex-shrink: 0; }
@@ -261,9 +270,10 @@
 
       <!-- 圓環圖檢視 -->
       <div id="donut-view-container" class="chart-view-panel">
-        <div class="pie-chart-wrapper" style="flex:1;">
+        <div class="pie-chart-wrapper">
           <div id="svg-chart-container" style="width:100%; height:100%; display:flex; justify-content:center; align-items:center;"></div>
         </div>
+        <div class="donut-note-list" id="donut-note-list"></div>
       </div>
 
       <!-- 長條圖檢視 -->
@@ -495,6 +505,36 @@
     targetBox.innerHTML = svgHtml;
   }
 
+  // 圓環圖正下方的備註明細清單：由新到舊列出每一筆紀錄的備註
+  function renderDonutNoteList() {
+    var container = document.getElementById("donut-note-list");
+    if (!container) return;
+
+    if (state.txns.length === 0) {
+      container.innerHTML = `<div style="color:var(--text-muted); text-align:center; padding:16px; font-size:12.5px;">暫無花費紀錄</div>`;
+      return;
+    }
+
+    var sorted = state.txns.slice().sort(function (a, b) {
+      return (b.date + (b.time || "")).localeCompare(a.date + (a.time || ""));
+    });
+
+    container.innerHTML = sorted.map(function (t) {
+      var c = CATEGORIES.find(function (x) { return x.id === t.category; }) || CATEGORIES[7];
+      var title = t.note || c.name;
+      return `
+        <div class="donut-note-row">
+          <span class="donut-note-dot" style="background-color:${c.color};"></span>
+          <div class="donut-note-text">
+            <span class="donut-note-title">${title}</span>
+            <span class="donut-note-meta">${t.date} · ${c.icon} ${c.name}</span>
+          </div>
+          <span class="donut-note-amt num-font">¥ ${t.amount.toLocaleString()}</span>
+        </div>
+      `;
+    }).join("");
+  }
+
   function renderAnalysisReport(totalSpent) {
     if (state.rankViewMode === "account") {
       renderAccountRank(totalSpent);
@@ -691,6 +731,7 @@
     document.getElementById("total-spent-text").textContent = "總支出：¥ " + totalJpy.toLocaleString();
     
     renderChart(totalJpy);
+    renderDonutNoteList();
     renderAnalysisReport(totalJpy);
 
     var groups = {};
@@ -1083,4 +1124,3 @@
 </script>
 </body>
 </html>
-
