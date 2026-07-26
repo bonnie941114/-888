@@ -94,6 +94,11 @@
   .donut-note-title { font-size: 12.5px; font-weight: 700; color: var(--text-main); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .donut-note-meta { font-size: 10.5px; color: var(--text-muted); font-weight: 500; }
   .donut-note-amt { font-size: 12.5px; font-weight: 800; color: var(--text-main); flex-shrink: 0; }
+  .mini-log-list { margin-top: 10px; max-height: 240px; overflow-y: auto; display: flex; flex-direction: column; padding-top: 8px; border-top: 1px dashed var(--border); }
+  .mini-log-list::-webkit-scrollbar { display: none; }
+  .mini-log-list .donut-note-row { padding: 7px 2px; }
+  .mini-log-list .del-btn-container { font-size: 12px; padding: 4px; }
+  .mini-log-empty { text-align: center; color: var(--text-muted); font-size: 11.5px; padding: 10px 0; }
 
   /* 分頁切換籤（圓環/長條、日曆/明細 共用） */
   .view-tab-group { display: flex; gap: 4px; background: var(--bg-page); border-radius: 12px; padding: 4px; margin-bottom: 14px; flex-shrink: 0; }
@@ -226,7 +231,8 @@
               💡 <b>萬用口語快速輸入：</b><br>
               - `07/01 儲值日幣 5000 西瓜卡`<br>
               - `7月5日 拉麵 1350`<br>
-              - `昨天 拉麵 1350`／`明天 交通 500`
+              - `昨天 拉麵 1350`／`明天 交通 500`<br>
+              - `飲料 50*3`／`午餐 150+50-20`（支援加減乘除）
             </div>
           </div>
         </div>
@@ -337,6 +343,7 @@
             </div>
             <div class="day-summary-count" id="day-summary-count">共 0 筆</div>
           </div>
+          <div class="mini-log-list" id="day-summary-list"></div>
         </div>
 
         <!-- 區間總結：自選起訖日期查看該區間的花費總覽 -->
@@ -357,6 +364,7 @@
             </div>
             <div class="day-summary-count" id="range-summary-count">共 0 筆</div>
           </div>
+          <div class="mini-log-list" id="range-summary-list"></div>
         </div>
       </div>
     </div>
@@ -515,21 +523,32 @@
       return;
     }
 
-    var sorted = state.txns.slice().sort(function (a, b) {
-      return (b.date + (b.time || "")).localeCompare(a.date + (a.time || ""));
+    var catTotals = {};
+    var catCounts = {};
+    state.txns.forEach(function (t) {
+      catTotals[t.category] = (catTotals[t.category] || 0) + t.amount;
+      catCounts[t.category] = (catCounts[t.category] || 0) + 1;
     });
+    var totalJpy = state.txns.reduce(function (s, t) { return s + t.amount; }, 0);
 
-    container.innerHTML = sorted.map(function (t) {
-      var c = CATEGORIES.find(function (x) { return x.id === t.category; }) || CATEGORIES[7];
-      var title = t.note || c.name;
+    var arr = [];
+    CATEGORIES.forEach(function (c) {
+      var amt = catTotals[c.id] || 0;
+      if (amt > 0) arr.push({ cat: c, amount: amt, count: catCounts[c.id] || 0 });
+    });
+    arr.sort(function (a, b) { return b.amount - a.amount; });
+
+    container.innerHTML = arr.map(function (item) {
+      var c = item.cat;
+      var pct = totalJpy > 0 ? Math.round(item.amount / totalJpy * 100) : 0;
       return `
         <div class="donut-note-row">
           <span class="donut-note-dot" style="background-color:${c.color};"></span>
           <div class="donut-note-text">
-            <span class="donut-note-title">${title}</span>
-            <span class="donut-note-meta">${t.date} · ${c.icon} ${c.name}</span>
+            <span class="donut-note-title">${c.icon} ${c.name}</span>
+            <span class="donut-note-meta">${pct}% · 共 ${item.count} 筆</span>
           </div>
-          <span class="donut-note-amt num-font">¥ ${t.amount.toLocaleString()}</span>
+          <span class="donut-note-amt num-font">¥ ${item.amount.toLocaleString()}</span>
         </div>
       `;
     }).join("");
@@ -708,6 +727,18 @@
     document.getElementById("cal-grid-container").innerHTML = html;
   }
 
+  // 產生一列迷你清單項目（日曆每日總結、區間總結共用），可直接點刪除
+  function buildMiniLogRow(t) {
+    var c = CATEGORIES.find(function (x) { return x.id === t.category; }) || CATEGORIES[7];
+    var title = t.note || c.name;
+    return '<div class="donut-note-row">'
+      + '<span class="donut-note-dot" style="background-color:' + c.color + ';"></span>'
+      + '<div class="donut-note-text"><span class="donut-note-title">' + title + '</span><span class="donut-note-meta">' + t.date + ' · ' + c.icon + ' ' + c.name + '</span></div>'
+      + '<span class="donut-note-amt num-font">¥ ' + t.amount.toLocaleString() + '</span>'
+      + '<button class="del-btn-container" onclick="App.deleteRecord(' + t.id + ')"><i class="fa-solid fa-trash-can"></i></button>'
+      + '</div>';
+  }
+
   function renderDaySummary() {
     var stats = getDayStats(state.selectedDate);
     var d = new Date(state.selectedDate + "T00:00:00");
@@ -718,6 +749,14 @@
     document.getElementById("day-summary-amt").textContent = "¥ " + stats.total.toLocaleString();
     document.getElementById("day-summary-twd").textContent = "≈ NT$ " + Math.round(stats.total * state.exchangeRate).toLocaleString();
     document.getElementById("day-summary-count").textContent = "共 " + stats.count + " 筆";
+
+    var listEl = document.getElementById("day-summary-list");
+    if (stats.list.length === 0) {
+      listEl.innerHTML = `<div class="mini-log-empty">這一天還沒有記帳紀錄</div>`;
+    } else {
+      var sorted = stats.list.slice().sort(function (a, b) { return (b.time || "").localeCompare(a.time || ""); });
+      listEl.innerHTML = sorted.map(buildMiniLogRow).join("");
+    }
   }
 
   function renderAll() {
@@ -788,13 +827,70 @@
 
   function pad(n) { return n < 10 ? '0' + n : n; }
 
-  function extractAmount(text) {
-    // 只有明確的日期格式（7/5、7-5、7月5日）才視為日期，避免把「12.5」這種小數金額誤判成12月5日
-    var clean = text.replace(/(\d{1,2})[月\/-](\d{1,2})/g, "");
+  // 安全計算「150+50」「200*3」「1000/4-100」這類不含括號的四則運算，先乘除後加減
+  function safeCalc(expr) {
+    var tokens = expr.match(/\d+\.?\d*|[+\-*\/]/g);
+    if (!tokens || tokens.length === 0) return null;
+
+    // 第一步：先處理乘除
+    var pass1 = [parseFloat(tokens[0])];
+    for (var i = 1; i < tokens.length - 1; i += 2) {
+      var op = tokens[i];
+      var num = parseFloat(tokens[i + 1]);
+      if (isNaN(num)) return null;
+      if (op === '*' || op === '/') {
+        var prev = pass1.pop();
+        pass1.push(op === '*' ? prev * num : prev / num);
+      } else {
+        pass1.push(op, num);
+      }
+    }
+
+    // 第二步：處理加減
+    var result = pass1[0];
+    for (var j = 1; j < pass1.length; j += 2) {
+      var op2 = pass1[j];
+      var n2 = pass1[j + 1];
+      if (op2 === '+') result += n2;
+      else if (op2 === '-') result -= n2;
+    }
+    return isNaN(result) ? null : result;
+  }
+
+  // 只把「看起來真的是日期」的片段（月份1-12、日期1-31）移除，
+  // 避免「150+50-20」的「50-20」或「1000/4」的除法被誤認成日期
+  function stripValidDates(text) {
+    return text.replace(/(?<!\d)(\d{1,2})[月\/-](\d{1,2})(?!\d)/g, function (match, mm, dd) {
+      var mo = parseInt(mm, 10), da = parseInt(dd, 10);
+      return (mo >= 1 && mo <= 12 && da >= 1 && da <= 31) ? "" : match;
+    });
+  }
+
+  // 找出文字中的金額，並支援「150+50」「單價80*3件」這類四則運算寫法
+  // 回傳 { value: 計算後金額, raw: 原始比對到的文字（供從備註中移除用）, isExpr: 是否為運算式 }
+  function extractAmountDetail(text) {
+    // 只有明確且合理的日期格式（7/5、7-5、7月5日）才視為日期，避免把「12.5」這種小數金額或「150-20」這種減法誤判成日期
+    var clean = stripValidDates(text);
     clean = clean.replace(/今天|明天|後天|昨天|前天|台幣|nt|twd|日幣|日圓|元|的/gi, "").trim();
     clean = clean.replace(/,/g, ""); // 支援「1,200」這種千分位逗號寫法
+
+    // 先找四則運算表達式（例如 150+50、200*3、1000/4-100）
+    var exprMatch = clean.match(/\d+(?:\.\d+)?\s*(?:[+\-*\/]\s*\d+(?:\.\d+)?\s*)+/);
+    if (exprMatch) {
+      var val = safeCalc(exprMatch[0]);
+      if (val !== null && !isNaN(val) && val > 0) {
+        return { value: Math.round(val * 100) / 100, raw: exprMatch[0].trim(), isExpr: true };
+      }
+    }
+
     var match = clean.match(/[\d.]+/);
-    return match ? parseFloat(match[0]) : null;
+    if (match) return { value: parseFloat(match[0]), raw: match[0], isExpr: false };
+    return null;
+  }
+
+  function extractAmount(text) {
+    var detail = extractAmountDetail(text);
+    return detail ? detail.value : null;
   }
 
   function compressImage(file, callback) {
@@ -846,6 +942,14 @@
       document.getElementById("range-summary-amt").textContent = "¥ " + total.toLocaleString();
       document.getElementById("range-summary-twd").textContent = "≈ NT$ " + Math.round(total * state.exchangeRate).toLocaleString();
       document.getElementById("range-summary-count").textContent = "共 " + list.length + " 筆";
+
+      var listEl = document.getElementById("range-summary-list");
+      if (list.length === 0) {
+        listEl.innerHTML = `<div class="mini-log-empty">這段區間還沒有記帳紀錄</div>`;
+      } else {
+        var sorted = list.slice().sort(function (a, b) { return (b.date + (b.time || "")).localeCompare(a.date + (a.time || "")); });
+        listEl.innerHTML = sorted.map(buildMiniLogRow).join("");
+      }
     },
     setRangeThisMonth: function () {
       var mStart = new Date(state.calYear, state.calMonth, 1);
@@ -991,30 +1095,35 @@
         targetDate = d.toISOString().slice(0, 10);
         dateInfoText = " (前天)";
       } else {
-        // 只認「7/5」「7-5」「7月5日」這種明確帶分隔符的日期格式，
-        // 不再用「猜4位數字像不像日期」的方式判斷，避免把金額（例如1015、0730）誤判成日期
-        var dateMatch = text.match(/(\d{1,2})[月\/-](\d{1,2})/);
+        // 只認「7/5」「7-5」「7月5日」這種明確帶分隔符、且月份日期範圍合理的日期格式，
+        // 避免把金額或運算式（例如1015、0730、150-20）誤判成日期
+        var dateMatch = text.match(/(?<!\d)(\d{1,2})[月\/-](\d{1,2})(?!\d)/);
         if (dateMatch) {
-          var m = pad(parseInt(dateMatch[1]));
-          var day = pad(parseInt(dateMatch[2]));
-          targetDate = yearNow + "-" + m + "-" + day;
-          dateInfoText = " (自動跳轉至 " + m + "/" + day + ")";
+          var mNum = parseInt(dateMatch[1], 10), dNum = parseInt(dateMatch[2], 10);
+          if (mNum >= 1 && mNum <= 12 && dNum >= 1 && dNum <= 31) {
+            var m = pad(mNum);
+            var day = pad(dNum);
+            targetDate = yearNow + "-" + m + "-" + day;
+            dateInfoText = " (自動跳轉至 " + m + "/" + day + ")";
+          }
         }
       }
 
       document.getElementById("txn-date-picker").value = targetDate;
 
       var isTwd = /台幣|nt|twd/i.test(text);
-      var rawAmount = extractAmount(text);
+      var amountDetail = extractAmountDetail(text);
+      var rawAmount = amountDetail ? amountDetail.value : null;
 
       if (!rawAmount || rawAmount <= 0) {
-        appendMessage("bot", "❌ 沒辨識到開銷數字喔！格式請輸入如：`餐飲 1200` 或 `儲值 5000`。");
+        appendMessage("bot", "❌ 沒辨識到開銷數字喔！格式請輸入如：`餐飲 1200`、`飲料 50*3` 或 `儲值 5000`。");
         return;
       }
 
-      var amountEscaped = String(rawAmount).replace(/\./g, "\\.");
-      var note = text.replace(/今天|明天|後天|昨天|前天|台幣|nt|twd|日幣|日圓|元|的/gi, "")
-                     .replace(/(\d{1,2})[月\/-](\d{1,2})/g, "")
+      // 用實際比對到的原始文字（可能是「150+50」這種運算式）從備註中移除，並跳脫正規表示式特殊符號
+      var amountEscaped = amountDetail.raw.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      var note = text.replace(/今天|明天|後天|昨天|前天|台幣|nt|twd|日幣|日圓|元|的/gi, "");
+      note = stripValidDates(note)
                      .replace(new RegExp(amountEscaped, 'g'), "")
                      .replace(/\s+/g, " ").trim();
 
@@ -1037,8 +1146,9 @@
       state.pendingTxn = { id: uniqueId, amount: finalJpy, note: note || "", category: category, account: "cash", tag: "none", photo: state.currentPhoto, date: targetDate, time: timeStr };
       state.currentPhoto = null;
 
-      var currencyReport = "日圓 ¥ " + finalJpy.toLocaleString() + " (折合台幣 NT$ " + finalTwd.toLocaleString() + ")";
-      if(isTwd) currencyReport = "台幣 NT$ " + finalTwd.toLocaleString() + " (折合日圓 ¥ " + finalJpy.toLocaleString() + ")";
+      var exprNote = amountDetail.isExpr ? (amountDetail.raw + " = ") : "";
+      var currencyReport = "日圓 ¥ " + exprNote + finalJpy.toLocaleString() + " (折合台幣 NT$ " + finalTwd.toLocaleString() + ")";
+      if(isTwd) currencyReport = "台幣 NT$ " + exprNote + finalTwd.toLocaleString() + " (折合日圓 ¥ " + finalJpy.toLocaleString() + ")";
 
       var drawer = document.getElementById("reply-drawer");
       var drawerTitle = document.getElementById("drawer-action-title");
