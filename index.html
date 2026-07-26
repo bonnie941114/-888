@@ -157,6 +157,9 @@
   .calc-btn-equal { background: var(--text-main); color: white; }
   .calc-insert-btn { width: 100%; background: var(--primary); color: white; border: none; border-radius: 14px; padding: 12px; font-size: 13px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
   .calc-insert-btn:active { opacity: 0.85; }
+  .calc-note-input { width: 100%; border: 1px solid var(--border); background: var(--bg-page); border-radius: 12px; padding: 10px 12px; font-size: 13px; font-weight: 600; color: var(--text-main); outline: none; margin-bottom: 10px; font-family: 'Noto Sans TC', sans-serif; }
+  .calc-note-input:focus { border-color: var(--primary); }
+  .calc-secondary-btn { width: 100%; background: none; border: none; color: var(--text-muted); font-size: 11.5px; font-weight: 700; cursor: pointer; padding: 8px 0 0; }
 
   /* 日曆檢視 */
   .cal-nav { display: flex; align-items: center; gap: 10px; }
@@ -271,7 +274,7 @@
             <i class="fa-solid fa-calculator"></i>
           </button>
 
-          <input type="text" id="chat-input-field" class="chat-control" placeholder="輸入開銷、日期或對話..." oninput="App.onLiveTyping()" onkeypress="App.handleKeyPress(event)">
+          <input type="text" id="chat-input-field" class="chat-control" placeholder="輸入開銷、日期或對話..." oninput="App.onLiveTyping()" onkeypress="App.handleKeyPress(event)" onfocus="App.onChatInputFocus()">
           
           <button class="chat-send-btn" onclick="App.processUserMessage()">
             <i class="fa-solid fa-paper-plane"></i>
@@ -397,7 +400,7 @@
   <img id="lightbox-img" src="">
 </div>
 
-<!-- 算盤計算機：算完可直接帶入對話框繼續記帳 -->
+<!-- 算盤計算機：輸入金額後直接串接分類、最後才選支付方式 -->
 <div id="calc-modal" class="calc-modal-overlay" onclick="if(event.target===this) App.closeCalculator()">
   <div class="calc-modal-card">
     <div class="calc-modal-header">
@@ -430,7 +433,11 @@
       <button class="calc-btn" onclick="App.calcInput('.')">.</button>
       <button class="calc-btn calc-btn-equal" onclick="App.calcEquals()">=</button>
     </div>
-    <button class="calc-insert-btn" onclick="App.calcInsertToChat()">帶入對話框 <i class="fa-solid fa-arrow-right"></i></button>
+
+    <input type="text" id="calc-note-input" class="calc-note-input" placeholder="這筆是什麼？（選填，例如：午餐）">
+
+    <button class="calc-insert-btn" onclick="App.calcProceedToCategory()"><i class="fa-solid fa-list-check"></i> 下一步：選擇分類</button>
+    <button class="calc-secondary-btn" onclick="App.calcInsertToChat()">或帶入文字框自行輸入</button>
   </div>
 </div>
 
@@ -469,6 +476,7 @@
     rankViewMode: "category",
     expandedRanks: {},
     calcExpr: "",
+    suppressAutoCalc: false,
     calYear: todayObj.getFullYear(),
     calMonth: todayObj.getMonth(),
     selectedDate: todayObj.toISOString().slice(0, 10)
@@ -972,9 +980,14 @@
   }
 
   window.App = {
+    onChatInputFocus: function () {
+      if (state.suppressAutoCalc) { state.suppressAutoCalc = false; return; }
+      App.openCalculator();
+    },
     openCalculator: function () {
       state.calcExpr = "";
       document.getElementById("calc-display").textContent = "0";
+      document.getElementById("calc-note-input").value = "";
       document.getElementById("calc-modal").classList.add("show");
     },
     closeCalculator: function () {
@@ -1030,13 +1043,51 @@
     },
     calcInsertToChat: function () {
       var val = state.calcExpr;
-      if (!val) { App.closeCalculator(); return; }
       var inputEl = document.getElementById("chat-input-field");
-      var existing = inputEl.value.trim();
-      inputEl.value = existing ? (existing + " " + val) : val;
-      App.onLiveTyping();
+      state.suppressAutoCalc = true; // 避免重新 focus 輸入框時計算機又立刻跳出來
       App.closeCalculator();
+      if (val) {
+        var noteVal = document.getElementById("calc-note-input").value.trim();
+        var existing = inputEl.value.trim();
+        var pieces = [existing, noteVal, val].filter(function (s) { return s; });
+        inputEl.value = pieces.join(" ");
+        App.onLiveTyping();
+      }
       inputEl.focus();
+    },
+    // 算盤計算 → 直接接續選分類 → 最後選支付方式，整個流程一次完成，不用打字
+    calcProceedToCategory: function () {
+      var result = safeCalc(state.calcExpr);
+      if (result === null || isNaN(result) || result <= 0) {
+        var displayEl = document.getElementById("calc-display");
+        displayEl.textContent = "請先輸入金額";
+        setTimeout(function () { displayEl.textContent = state.calcExpr || "0"; }, 900);
+        return;
+      }
+
+      var finalJpy = Math.round(result * 100) / 100;
+      var noteVal = document.getElementById("calc-note-input").value.trim();
+      var targetDate = document.getElementById("txn-date-picker").value || todayStr();
+
+      var now = new Date();
+      var timeStr = pad(now.getHours()) + ":" + pad(now.getMinutes());
+      var uniqueId = Date.now() + Math.floor(Math.random() * 1000);
+
+      state.pendingTxn = { id: uniqueId, amount: Math.round(finalJpy), note: noteVal, category: null, account: "cash", tag: "none", photo: state.currentPhoto, date: targetDate, time: timeStr };
+      state.currentPhoto = null;
+
+      state.suppressAutoCalc = true;
+      App.closeCalculator();
+
+      appendMessage("user", (noteVal ? noteVal + " " : "") + "¥" + finalJpy.toLocaleString());
+      appendMessage("bot", `📅 交易日期：${targetDate}<br>金額分析：日圓 ¥ ${finalJpy.toLocaleString()} (折合台幣 NT$ ${Math.round(finalJpy * state.exchangeRate).toLocaleString()})。請在下方選單點選消費分類。`);
+
+      var drawer = document.getElementById("reply-drawer");
+      var drawerTitle = document.getElementById("drawer-action-title");
+      var target = document.getElementById("drawer-content-target");
+      drawerTitle.textContent = "請點選花費分類 💰金額：¥" + finalJpy.toLocaleString();
+      target.innerHTML = '<div class="chat-guide-box">' + CATEGORIES.map(function (c) { return '<button class="guide-btn" onclick="App.selectPendingCat(\'' + c.id + '\')"><span>' + c.icon + '</span><span>' + c.name + '</span></button>'; }).join("") + '</div>';
+      drawer.style.display = "flex";
     },
     toggleRankExpand: function (key) {
       state.expandedRanks[key] = !state.expandedRanks[key];
