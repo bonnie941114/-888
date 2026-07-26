@@ -78,6 +78,8 @@
 
   .chat-input-bar { background: var(--surface); padding: 10px; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
   .chat-control { flex: 1; border: 1px solid var(--border); border-radius: 20px; padding: 10px 14px; font-size: 14px; background: var(--bg-page); outline: none; color: var(--text-main); font-weight: 600; }
+  .chat-control[readonly] { cursor: pointer; }
+  .chat-control:not([readonly]) { background: var(--surface); border-color: var(--primary); }
   .chat-send-btn { background: none; border: none; color: var(--primary); font-size: 18px; cursor: pointer; padding: 0 4px; }
   .chat-camera-btn { color: var(--text-muted); font-size: 18px; cursor: pointer; }
 
@@ -274,7 +276,7 @@
             <i class="fa-solid fa-calculator"></i>
           </button>
 
-          <input type="text" id="chat-input-field" class="chat-control" placeholder="輸入開銷、日期或對話..." oninput="App.onLiveTyping()" onkeypress="App.handleKeyPress(event)" onfocus="App.onChatInputFocus()">
+          <input type="text" id="chat-input-field" class="chat-control" placeholder="點一下開始記帳" readonly oninput="App.onLiveTyping()" onkeypress="App.handleKeyPress(event)" onfocus="App.onChatInputFocus()" onblur="App.onChatInputBlur()">
           
           <button class="chat-send-btn" onclick="App.processUserMessage()">
             <i class="fa-solid fa-paper-plane"></i>
@@ -437,7 +439,7 @@
     <input type="text" id="calc-note-input" class="calc-note-input" placeholder="這筆是什麼？（選填，例如：午餐）">
 
     <button class="calc-insert-btn" onclick="App.calcProceedToCategory()"><i class="fa-solid fa-list-check"></i> 下一步：選擇分類</button>
-    <button class="calc-secondary-btn" onclick="App.calcInsertToChat()">或帶入文字框自行輸入</button>
+    <button class="calc-secondary-btn" onclick="App.calcInsertToChat()"><i class="fa-solid fa-keyboard"></i> 改用鍵盤手動輸入（可打日期、昨天/明天等指令）</button>
   </div>
 </div>
 
@@ -984,6 +986,10 @@
       if (state.suppressAutoCalc) { state.suppressAutoCalc = false; return; }
       App.openCalculator();
     },
+    onChatInputBlur: function () {
+      // 只要不是正在打字輸入模式，離開焦點就恢復唯讀，下次點擊直接跳計算機、不會叫出鍵盤
+      document.getElementById("chat-input-field").readOnly = true;
+    },
     openCalculator: function () {
       state.calcExpr = "";
       document.getElementById("calc-display").textContent = "0";
@@ -1053,6 +1059,7 @@
         inputEl.value = pieces.join(" ");
         App.onLiveTyping();
       }
+      inputEl.readOnly = false; // 切換成鍵盤手動輸入模式，這樣才會真的叫出鍵盤
       inputEl.focus();
     },
     // 算盤計算 → 直接接續選分類 → 最後選支付方式，整個流程一次完成，不用打字
@@ -1242,6 +1249,7 @@
 
       appendMessage("user", rawInput);
       inputEl.value = "";
+      inputEl.readOnly = true;
 
       // 正規化：把「1,200」這種千分位逗號去掉，避免後面把「1」「200」拆成兩截誤判
       var text = rawInput.replace(/(\d),(?=\d)/g, "$1");
