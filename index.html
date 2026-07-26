@@ -141,6 +141,23 @@
   #lightbox { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); z-index: 100; align-items: center; justify-content: center; }
   #lightbox img { max-width: 90%; max-height: 80vh; border-radius: 12px; }
 
+  /* 算盤計算機 */
+  .calc-modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); backdrop-filter: blur(3px); z-index: 200; align-items: center; justify-content: center; padding: 20px; }
+  .calc-modal-overlay.show { display: flex; }
+  .calc-modal-card { background: var(--surface); border-radius: 24px; padding: 18px; width: 100%; max-width: 300px; box-shadow: 0 20px 50px rgba(0,0,0,0.25); }
+  .calc-modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 14px; font-weight: 700; color: var(--text-main); }
+  .calc-modal-header i { margin-right: 4px; color: var(--primary); }
+  .calc-close-btn { background: none; border: none; color: var(--text-muted); font-size: 16px; cursor: pointer; padding: 4px; }
+  .calc-display { background: var(--bg-page); border-radius: 14px; padding: 16px 14px; text-align: right; font-size: 26px; font-weight: 800; color: var(--text-main); margin-bottom: 14px; overflow-x: auto; white-space: nowrap; }
+  .calc-display::-webkit-scrollbar { display: none; }
+  .calc-btn-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px; }
+  .calc-btn { background: var(--bg-page); border: none; border-radius: 12px; padding: 14px 0; font-size: 16px; font-weight: 700; color: var(--text-main); cursor: pointer; font-family: 'Manrope', sans-serif; }
+  .calc-btn:active { background: var(--border); }
+  .calc-btn-op { background: #EEF3F5; color: var(--primary); }
+  .calc-btn-equal { background: var(--text-main); color: white; }
+  .calc-insert-btn { width: 100%; background: var(--primary); color: white; border: none; border-radius: 14px; padding: 12px; font-size: 13px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
+  .calc-insert-btn:active { opacity: 0.85; }
+
   /* 日曆檢視 */
   .cal-nav { display: flex; align-items: center; gap: 10px; }
   .cal-nav-btn { background: var(--bg-page); border: 1px solid var(--border); border-radius: 10px; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-main); font-size: 11px; }
@@ -249,7 +266,11 @@
             <i class="fa-solid fa-camera"></i>
           </label>
           <input type="file" id="camera-input" accept="image/*" capture="environment" style="display:none;" onchange="App.handlePhoto(event)">
-          
+
+          <button type="button" class="chat-camera-btn" style="border:none; background:none; padding:0;" title="算盤計算機" onclick="App.openCalculator()">
+            <i class="fa-solid fa-calculator"></i>
+          </button>
+
           <input type="text" id="chat-input-field" class="chat-control" placeholder="輸入開銷、日期或對話..." oninput="App.onLiveTyping()" onkeypress="App.handleKeyPress(event)">
           
           <button class="chat-send-btn" onclick="App.processUserMessage()">
@@ -376,6 +397,43 @@
   <img id="lightbox-img" src="">
 </div>
 
+<!-- 算盤計算機：算完可直接帶入對話框繼續記帳 -->
+<div id="calc-modal" class="calc-modal-overlay" onclick="if(event.target===this) App.closeCalculator()">
+  <div class="calc-modal-card">
+    <div class="calc-modal-header">
+      <span><i class="fa-solid fa-calculator"></i> 算盤計算機</span>
+      <button class="calc-close-btn" onclick="App.closeCalculator()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="calc-display num-font" id="calc-display">0</div>
+    <div class="calc-btn-grid">
+      <button class="calc-btn calc-btn-op" onclick="App.calcClear()">C</button>
+      <button class="calc-btn calc-btn-op" onclick="App.calcBackspace()"><i class="fa-solid fa-delete-left"></i></button>
+      <button class="calc-btn calc-btn-op" onclick="App.calcPercent()">%</button>
+      <button class="calc-btn calc-btn-op" onclick="App.calcInput('/')">÷</button>
+
+      <button class="calc-btn" onclick="App.calcInput('7')">7</button>
+      <button class="calc-btn" onclick="App.calcInput('8')">8</button>
+      <button class="calc-btn" onclick="App.calcInput('9')">9</button>
+      <button class="calc-btn calc-btn-op" onclick="App.calcInput('*')">×</button>
+
+      <button class="calc-btn" onclick="App.calcInput('4')">4</button>
+      <button class="calc-btn" onclick="App.calcInput('5')">5</button>
+      <button class="calc-btn" onclick="App.calcInput('6')">6</button>
+      <button class="calc-btn calc-btn-op" onclick="App.calcInput('-')">−</button>
+
+      <button class="calc-btn" onclick="App.calcInput('1')">1</button>
+      <button class="calc-btn" onclick="App.calcInput('2')">2</button>
+      <button class="calc-btn" onclick="App.calcInput('3')">3</button>
+      <button class="calc-btn calc-btn-op" onclick="App.calcInput('+')">+</button>
+
+      <button class="calc-btn" onclick="App.calcInput('0')" style="grid-column: span 2;">0</button>
+      <button class="calc-btn" onclick="App.calcInput('.')">.</button>
+      <button class="calc-btn calc-btn-equal" onclick="App.calcEquals()">=</button>
+    </div>
+    <button class="calc-insert-btn" onclick="App.calcInsertToChat()">帶入對話框 <i class="fa-solid fa-arrow-right"></i></button>
+  </div>
+</div>
+
 <script>
 (function () {
   "use strict";
@@ -410,6 +468,7 @@
     txns: [], exchangeRate: 0.212, pendingTxn: null, currentPhoto: null, activeTab: "chat",
     rankViewMode: "category",
     expandedRanks: {},
+    calcExpr: "",
     calYear: todayObj.getFullYear(),
     calMonth: todayObj.getMonth(),
     selectedDate: todayObj.toISOString().slice(0, 10)
@@ -913,6 +972,72 @@
   }
 
   window.App = {
+    openCalculator: function () {
+      state.calcExpr = "";
+      document.getElementById("calc-display").textContent = "0";
+      document.getElementById("calc-modal").classList.add("show");
+    },
+    closeCalculator: function () {
+      document.getElementById("calc-modal").classList.remove("show");
+    },
+    calcInput: function (val) {
+      var expr = state.calcExpr;
+      var operators = ['+', '-', '*', '/'];
+      if (operators.indexOf(val) !== -1) {
+        if (expr === "" && val !== '-') return; // 開頭不能直接接運算子（負號除外）
+        var lastChar = expr.slice(-1);
+        if (operators.indexOf(lastChar) !== -1) {
+          expr = expr.slice(0, -1) + val; // 連續按運算子時，取代成最後按的那個
+        } else {
+          expr += val;
+        }
+      } else if (val === '.') {
+        var parts = expr.split(/[+\-*/]/);
+        var lastNum = parts[parts.length - 1];
+        if (lastNum.indexOf('.') === -1) expr += (lastNum === "" ? "0." : val);
+      } else {
+        expr += val;
+      }
+      state.calcExpr = expr;
+      document.getElementById("calc-display").textContent = expr || "0";
+    },
+    calcClear: function () {
+      state.calcExpr = "";
+      document.getElementById("calc-display").textContent = "0";
+    },
+    calcBackspace: function () {
+      state.calcExpr = state.calcExpr.slice(0, -1);
+      document.getElementById("calc-display").textContent = state.calcExpr || "0";
+    },
+    calcPercent: function () {
+      var m = state.calcExpr.match(/(\d+\.?\d*)$/);
+      if (!m) return;
+      var val = parseFloat(m[1]) / 100;
+      state.calcExpr = state.calcExpr.slice(0, state.calcExpr.length - m[1].length) + val;
+      document.getElementById("calc-display").textContent = state.calcExpr;
+    },
+    calcEquals: function () {
+      var result = safeCalc(state.calcExpr);
+      var displayEl = document.getElementById("calc-display");
+      if (result === null || isNaN(result)) {
+        displayEl.textContent = "錯誤";
+        state.calcExpr = "";
+        return;
+      }
+      var rounded = Math.round(result * 100) / 100;
+      state.calcExpr = String(rounded);
+      displayEl.textContent = state.calcExpr;
+    },
+    calcInsertToChat: function () {
+      var val = state.calcExpr;
+      if (!val) { App.closeCalculator(); return; }
+      var inputEl = document.getElementById("chat-input-field");
+      var existing = inputEl.value.trim();
+      inputEl.value = existing ? (existing + " " + val) : val;
+      App.onLiveTyping();
+      App.closeCalculator();
+      inputEl.focus();
+    },
     toggleRankExpand: function (key) {
       state.expandedRanks[key] = !state.expandedRanks[key];
       var totalJpy = state.txns.reduce(function (s, t) { return s + t.amount; }, 0);
