@@ -148,9 +148,9 @@
   #lightbox img { max-width: 90%; max-height: 80vh; border-radius: 12px; }
 
   /* 算盤計算機 */
-  .calc-modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); backdrop-filter: blur(3px); z-index: 200; align-items: center; justify-content: center; padding: 20px; }
+  .calc-modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); backdrop-filter: blur(3px); z-index: 200; align-items: center; justify-content: center; padding: 20px; overflow-y: auto; }
   .calc-modal-overlay.show { display: flex; }
-  .calc-modal-card { background: var(--surface); border-radius: 24px; padding: 18px; width: 100%; max-width: 300px; box-shadow: 0 20px 50px rgba(0,0,0,0.25); }
+  .calc-modal-card { background: var(--surface); border-radius: 24px; padding: 18px; width: 100%; max-width: 300px; max-height: 100%; overflow-y: auto; box-shadow: 0 20px 50px rgba(0,0,0,0.25); margin: auto; }
   .calc-modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 14px; font-weight: 700; color: var(--text-main); }
   .calc-modal-header i { margin-right: 4px; color: var(--primary); }
   .calc-close-btn { background: none; border: none; color: var(--text-muted); font-size: 16px; cursor: pointer; padding: 4px; }
@@ -424,7 +424,7 @@
       <button class="calc-close-btn" onclick="App.closeCalculator()"><i class="fa-solid fa-xmark"></i></button>
     </div>
 
-    <input type="text" id="calc-note-input" class="calc-note-input" placeholder="這筆是什麼？（選填，例如：午餐）">
+    <input type="text" id="calc-note-input" class="calc-note-input" placeholder="這筆是什麼？（選填，例如：午餐）" onfocus="setTimeout(function(){ this.scrollIntoView({block:'center', behavior:'smooth'}); }.bind(this), 150)">
 
     <div class="calc-display num-font" id="calc-display">0</div>
     <div class="calc-btn-grid">
@@ -503,16 +503,27 @@
   function todayStr() { return new Date().toISOString().slice(0, 10); }
   function toDateStr(d) { return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()); }
 
-  // 手機鍵盤彈出時，100dvh 版面常常不會正確跟著收縮，導致輸入框被鍵盤遮住。
-  // 改用 VisualViewport 實際可視高度動態調整版面，鍵盤跳出時畫面會即時跟著縮小。
+  // 手機鍵盤彈出時，一般版面（.col）可以透過調整 body 高度跟著收縮，
+  // 但 position:fixed 的彈窗（計算機視窗）不吃這一套，瀏覽器不會讓它跟著鍵盤重新計算大小，
+  // 所以要直接用 VisualViewport 的即時可視高度/位移，強制校正這個彈窗的高度與位置。
   function setupKeyboardViewportFix() {
-    if (!window.visualViewport) return;
+    var modal = document.getElementById("calc-modal");
     function adjustHeight() {
-      document.body.style.height = window.visualViewport.height + "px";
+      var vv = window.visualViewport;
+      var h = vv ? vv.height : window.innerHeight;
+      var top = vv ? vv.offsetTop : 0;
+      document.body.style.height = h + "px";
+      if (modal) {
+        modal.style.height = h + "px";
+        modal.style.top = top + "px";
+      }
       window.scrollTo(0, 0);
     }
-    window.visualViewport.addEventListener("resize", adjustHeight);
-    window.visualViewport.addEventListener("scroll", adjustHeight);
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener("resize", adjustHeight);
+      window.visualViewport.addEventListener("scroll", adjustHeight);
+    }
+    window.addEventListener("resize", adjustHeight);
     adjustHeight();
   }
 
