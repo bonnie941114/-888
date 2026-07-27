@@ -283,7 +283,7 @@
             <i class="fa-solid fa-calculator"></i>
           </button>
 
-          <input type="text" id="chat-input-field" class="chat-control" placeholder="輸入開銷、日期或對話..." oninput="App.onLiveTyping()" onkeypress="App.handleKeyPress(event)" onclick="App.openCalculator()">
+          <input type="text" id="chat-input-field" class="chat-control" placeholder="輸入開銷、日期或對話..." oninput="App.onLiveTyping()" onkeypress="App.handleKeyPress(event)">
           
           <button class="chat-send-btn" onclick="App.processUserMessage()">
             <i class="fa-solid fa-paper-plane"></i>
@@ -423,6 +423,9 @@
       <span><i class="fa-solid fa-calculator"></i> 算盤計算機</span>
       <button class="calc-close-btn" onclick="App.closeCalculator()"><i class="fa-solid fa-xmark"></i></button>
     </div>
+
+    <input type="text" id="calc-note-input" class="calc-note-input" placeholder="這筆是什麼？（選填，例如：午餐）">
+
     <div class="calc-display num-font" id="calc-display">0</div>
     <div class="calc-btn-grid">
       <button class="calc-btn calc-btn-op" onclick="App.calcClear()">C</button>
@@ -449,8 +452,6 @@
       <button class="calc-btn" onclick="App.calcInput('.')">.</button>
       <button class="calc-btn calc-btn-equal" onclick="App.calcEquals()">=</button>
     </div>
-
-    <input type="text" id="calc-note-input" class="calc-note-input" placeholder="這筆是什麼？（選填，例如：午餐）">
 
     <button class="calc-insert-btn" onclick="App.calcProceedToCategory()"><i class="fa-solid fa-list-check"></i> 下一步：選擇分類</button>
     <button class="calc-secondary-btn" onclick="App.calcInsertToChat()"><i class="fa-solid fa-keyboard"></i> 改用鍵盤手動輸入（可打日期、昨天/明天等指令）</button>
