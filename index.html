@@ -283,7 +283,7 @@
             <i class="fa-solid fa-calculator"></i>
           </button>
 
-          <input type="text" id="chat-input-field" class="chat-control" placeholder="輸入開銷、日期或對話..." oninput="App.onLiveTyping()" onkeypress="App.handleKeyPress(event)">
+          <input type="text" id="chat-input-field" class="chat-control" placeholder="輸入開銷、日期或對話..." oninput="App.onLiveTyping()" onkeypress="App.handleKeyPress(event)" onclick="App.openCalculator()">
           
           <button class="chat-send-btn" onclick="App.processUserMessage()">
             <i class="fa-solid fa-paper-plane"></i>
@@ -502,9 +502,24 @@
   function todayStr() { return new Date().toISOString().slice(0, 10); }
   function toDateStr(d) { return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()); }
 
+  // 手機鍵盤彈出時，100dvh 版面常常不會正確跟著收縮，導致輸入框被鍵盤遮住。
+  // 改用 VisualViewport 實際可視高度動態調整版面，鍵盤跳出時畫面會即時跟著縮小。
+  function setupKeyboardViewportFix() {
+    if (!window.visualViewport) return;
+    function adjustHeight() {
+      document.body.style.height = window.visualViewport.height + "px";
+      window.scrollTo(0, 0);
+    }
+    window.visualViewport.addEventListener("resize", adjustHeight);
+    window.visualViewport.addEventListener("scroll", adjustHeight);
+    adjustHeight();
+  }
+
   function loadInitial() {
     var todayStr = new Date().toISOString().slice(0, 10);
     document.getElementById("txn-date-picker").value = todayStr;
+
+    setupKeyboardViewportFix();
 
     var val = localStorage.getItem(STORAGE_KEY);
     if (val) {
@@ -1000,6 +1015,8 @@
       document.getElementById("calc-display").textContent = "0";
       document.getElementById("calc-note-input").value = "";
       document.getElementById("calc-modal").classList.add("show");
+      // 點擊輸入框時鍵盤可能會先閃一下，這裡立刻讓它失焦、把鍵盤收起來，只留計算機
+      document.getElementById("chat-input-field").blur();
     },
     closeCalculator: function () {
       document.getElementById("calc-modal").classList.remove("show");
