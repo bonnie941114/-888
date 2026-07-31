@@ -75,6 +75,9 @@
   /* 彈出抽屜 */
   .quick-reply-drawer { background: var(--surface); border-top: 1px solid var(--border); display: none; flex-direction: column; padding: 10px; gap: 8px; flex-shrink: 0; }
   .drawer-title { font-size: 12px; font-weight: 700; color: var(--text-muted); text-align: center; }
+  .drawer-title-row { display: flex; align-items: center; justify-content: center; position: relative; margin-bottom: 4px; }
+  .drawer-title-row .drawer-title { margin-bottom: 0; }
+  .drawer-cancel-btn { position: absolute; right: 0; background: none; border: none; color: var(--expense); font-size: 11px; font-weight: 700; cursor: pointer; padding: 4px 6px; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
   
   .chat-guide-box { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; max-height: 140px; overflow-y: auto; }
   .guide-btn { background: var(--bg-page); border: 1px solid var(--border); padding: 8px 2px; border-radius: 10px; font-size: 11px; font-weight: 700; color: var(--text-main); cursor: pointer; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 2px; }
@@ -268,7 +271,10 @@
         
         <!-- 智慧防跑版彈出抽屜 -->
         <div class="quick-reply-drawer" id="reply-drawer">
-          <div class="drawer-title" id="drawer-action-title">請選擇花費分類</div>
+          <div class="drawer-title-row">
+            <div class="drawer-title" id="drawer-action-title">請選擇花費分類</div>
+            <button class="drawer-cancel-btn" onclick="App.cancelPendingTxn()"><i class="fa-solid fa-xmark"></i> 取消這筆</button>
+          </div>
           <div id="drawer-content-target"></div>
         </div>
         
@@ -1433,6 +1439,12 @@
         appendMessage("bot", `📅 交易日期：${targetDate}${dateInfoText}<br>金額分析：${currencyReport}<br>備註：${note || foundCat.name}`);
         App.askAccount();
       }
+    },
+    // 選分類/選支付方式的途中，如果發現輸入錯了，直接按這個取消，不用整組選完再刪除
+    cancelPendingTxn: function () {
+      state.pendingTxn = null;
+      document.getElementById("reply-drawer").style.display = "none";
+      appendMessage("bot", "🚫 已取消這筆記帳，沒有存入任何紀錄。可以重新輸入一次。");
     },
     selectPendingCat: function(catId) {
       if (!state.pendingTxn) return;
