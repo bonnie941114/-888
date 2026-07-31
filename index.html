@@ -150,22 +150,22 @@
   /* 算盤計算機 */
   .calc-modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); backdrop-filter: blur(3px); z-index: 200; align-items: center; justify-content: center; padding: 20px; overflow-y: auto; }
   .calc-modal-overlay.show { display: flex; }
-  .calc-modal-card { background: var(--surface); border-radius: 24px; padding: 18px; width: 100%; max-width: 300px; max-height: 100%; overflow-y: auto; box-shadow: 0 20px 50px rgba(0,0,0,0.25); margin: auto; }
+  .calc-modal-card { background: var(--surface); border-radius: 24px; padding: 18px; width: 100%; max-width: 300px; max-height: 100%; overflow-y: auto; box-shadow: 0 20px 50px rgba(0,0,0,0.25); margin: auto; touch-action: manipulation; }
   .calc-modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 14px; font-weight: 700; color: var(--text-main); }
   .calc-modal-header i { margin-right: 4px; color: var(--primary); }
-  .calc-close-btn { background: none; border: none; color: var(--text-muted); font-size: 16px; cursor: pointer; padding: 4px; }
-  .calc-display { background: var(--bg-page); border-radius: 14px; padding: 16px 14px; text-align: right; font-size: 26px; font-weight: 800; color: var(--text-main); margin-bottom: 14px; overflow-x: auto; white-space: nowrap; }
+  .calc-close-btn { background: none; border: none; color: var(--text-muted); font-size: 16px; cursor: pointer; padding: 4px; touch-action: manipulation; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+  .calc-display { background: var(--bg-page); border-radius: 14px; padding: 16px 14px; text-align: right; font-size: 26px; font-weight: 800; color: var(--text-main); margin-bottom: 14px; overflow-x: auto; white-space: nowrap; -webkit-user-select: none; user-select: none; }
   .calc-display::-webkit-scrollbar { display: none; }
   .calc-btn-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px; }
-  .calc-btn { background: var(--bg-page); border: none; border-radius: 12px; padding: 14px 0; font-size: 16px; font-weight: 700; color: var(--text-main); cursor: pointer; font-family: 'Manrope', sans-serif; }
+  .calc-btn { background: var(--bg-page); border: none; border-radius: 12px; padding: 14px 0; font-size: 16px; font-weight: 700; color: var(--text-main); cursor: pointer; font-family: 'Manrope', sans-serif; touch-action: manipulation; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
   .calc-btn:active { background: var(--border); }
   .calc-btn-op { background: #EFE7DC; color: var(--primary); }
   .calc-btn-equal { background: var(--text-main); color: white; }
-  .calc-insert-btn { width: 100%; background: var(--primary); color: white; border: none; border-radius: 14px; padding: 12px; font-size: 13px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
+  .calc-insert-btn { width: 100%; background: var(--primary); color: white; border: none; border-radius: 14px; padding: 12px; font-size: 13px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; touch-action: manipulation; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
   .calc-insert-btn:active { opacity: 0.85; }
   .calc-note-input { width: 100%; border: 1px solid var(--border); background: var(--bg-page); border-radius: 12px; padding: 10px 12px; font-size: 16px; font-weight: 600; color: var(--text-main); outline: none; margin-bottom: 10px; font-family: 'Noto Sans TC', sans-serif; }
   .calc-note-input:focus { border-color: var(--primary); }
-  .calc-secondary-btn { width: 100%; background: none; border: none; color: var(--text-muted); font-size: 11.5px; font-weight: 700; cursor: pointer; padding: 8px 0 0; }
+  .calc-secondary-btn { width: 100%; background: none; border: none; color: var(--text-muted); font-size: 11.5px; font-weight: 700; cursor: pointer; padding: 8px 0 0; touch-action: manipulation; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
   .sync-actions { display: flex; gap: 8px; margin-top: 10px; flex-shrink: 0; }
   .sync-btn { flex: 1; background: var(--bg-page); border: 1px solid var(--border); border-radius: 10px; padding: 8px; font-size: 11.5px; font-weight: 700; color: var(--text-main); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
   .sync-btn:hover { background: var(--border); }
@@ -1049,7 +1049,14 @@
         var lastNum = parts[parts.length - 1];
         if (lastNum.indexOf('.') === -1) expr += (lastNum === "" ? "0." : val);
       } else {
-        expr += val;
+        // 數字鍵：避免連按出現「00」「05」這種多餘前導零
+        var segs = expr.split(/[+\-*/]/);
+        var currentSeg = segs[segs.length - 1];
+        if (currentSeg === "0") {
+          expr = expr.slice(0, expr.length - 1) + val;
+        } else {
+          expr += val;
+        }
       }
       state.calcExpr = expr;
       document.getElementById("calc-display").textContent = expr || "0";
