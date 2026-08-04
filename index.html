@@ -103,6 +103,11 @@
   .donut-note-title { font-size: 12.5px; font-weight: 700; color: var(--text-main); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .donut-note-meta { font-size: 10.5px; color: var(--text-muted); font-weight: 500; }
   .donut-note-amt { font-size: 12.5px; font-weight: 800; color: var(--text-main); flex-shrink: 0; }
+  .day-cat-summary { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+  .day-cat-bar-row { display: flex; flex-direction: column; gap: 3px; }
+  .day-cat-bar-top { display: flex; justify-content: space-between; align-items: baseline; font-size: 11px; font-weight: 700; color: var(--text-main); }
+  .day-cat-bar-bg { width: 100%; height: 6px; background: var(--border); border-radius: 4px; overflow: hidden; }
+  .day-cat-bar-fill { height: 100%; border-radius: 4px; }
   .mini-log-list { margin-top: 10px; max-height: 240px; overflow-y: auto; display: flex; flex-direction: column; padding-top: 8px; border-top: 1px dashed var(--border); }
   .mini-log-list::-webkit-scrollbar { display: none; }
   .mini-log-list .donut-note-row { padding: 7px 2px; }
@@ -389,6 +394,7 @@
             </div>
             <div class="day-summary-count" id="day-summary-count">共 0 筆</div>
           </div>
+          <div class="day-cat-summary" id="day-summary-cat-list"></div>
           <div class="mini-log-list" id="day-summary-list"></div>
         </div>
 
@@ -864,6 +870,29 @@
     document.getElementById("day-summary-amt").textContent = "¥ " + stats.total.toLocaleString();
     document.getElementById("day-summary-twd").textContent = "≈ NT$ " + Math.round(stats.total * state.exchangeRate).toLocaleString();
     document.getElementById("day-summary-count").textContent = "共 " + stats.count + " 筆";
+
+    // 當天的花費分類彙總，用長條圖呈現各分類的相對比例
+    var catEl = document.getElementById("day-summary-cat-list");
+    if (stats.list.length === 0) {
+      catEl.innerHTML = "";
+    } else {
+      var catTotals = {};
+      stats.list.forEach(function (t) { catTotals[t.category] = (catTotals[t.category] || 0) + t.amount; });
+      var catArr = [];
+      CATEGORIES.forEach(function (c) {
+        var amt = catTotals[c.id] || 0;
+        if (amt > 0) catArr.push({ cat: c, amount: amt });
+      });
+      catArr.sort(function (a, b) { return b.amount - a.amount; });
+      var maxAmt = catArr.length > 0 ? catArr[0].amount : 1;
+      catEl.innerHTML = catArr.map(function (item) {
+        var barWidth = Math.round((item.amount / maxAmt) * 100);
+        return '<div class="day-cat-bar-row">'
+          + '<div class="day-cat-bar-top"><span>' + item.cat.icon + ' ' + item.cat.name + '</span><span class="num-font">¥' + item.amount.toLocaleString() + '</span></div>'
+          + '<div class="day-cat-bar-bg"><div class="day-cat-bar-fill" style="width:' + barWidth + '%; background-color:' + item.cat.color + ';"></div></div>'
+          + '</div>';
+      }).join("");
+    }
 
     var listEl = document.getElementById("day-summary-list");
     if (stats.list.length === 0) {
