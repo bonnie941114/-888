@@ -108,6 +108,8 @@
   .day-cat-bar-top { display: flex; justify-content: space-between; align-items: baseline; font-size: 11px; font-weight: 700; color: var(--text-main); }
   .day-cat-bar-bg { width: 100%; height: 6px; background: var(--border); border-radius: 4px; overflow: hidden; }
   .day-cat-bar-fill { height: 100%; border-radius: 4px; }
+  .range-donut-wrapper { margin-top: 10px; }
+  .range-donut-chart { display: flex; justify-content: center; padding: 4px 0 8px; }
   .mini-log-list { margin-top: 10px; max-height: 240px; overflow-y: auto; display: flex; flex-direction: column; padding-top: 8px; border-top: 1px dashed var(--border); }
   .mini-log-list::-webkit-scrollbar { display: none; }
   .mini-log-list .donut-note-row { padding: 7px 2px; }
@@ -416,6 +418,7 @@
             </div>
             <div class="day-summary-count" id="range-summary-count">共 0 筆</div>
           </div>
+          <div class="range-donut-wrapper" id="range-summary-donut"></div>
           <div class="mini-log-list" id="range-summary-list"></div>
         </div>
       </div>
@@ -585,6 +588,45 @@
   }
 
   // 👑 1:1 完美還原 LINE_NOTE_260706_2.jpg：分離式、圓弧收角、帶空隙的高級圓環引擎
+  // 通用圓環圖 SVG 產生器：輸入一批交易紀錄，輸出依分類分色的圓環圖 SVG 字串
+  function buildDonutSvg(txnsList, opts) {
+    opts = opts || {};
+    var r = opts.r || 36;
+    var strokeW = opts.strokeW || 14;
+    var maxSize = opts.maxSize || 150;
+
+    var total = txnsList.reduce(function (s, t) { return s + t.amount; }, 0);
+    if (total === 0) return null;
+
+    var catTotals = {};
+    txnsList.forEach(function (t) { catTotals[t.category] = (catTotals[t.category] || 0) + t.amount; });
+
+    var c = 2 * Math.PI * r;
+    var currentOffset = 0;
+
+    var activeCatsCount = 0;
+    CATEGORIES.forEach(function (cat) { if ((catTotals[cat.id] || 0) > 0) activeCatsCount++; });
+
+    var gapSize = activeCatsCount > 1 ? 4 : 0;
+    var totalGapLength = gapSize * activeCatsCount;
+    var availableLength = c - totalGapLength;
+
+    var svgHtml = '<svg width="100%" height="100%" viewBox="0 0 100 100" style="max-width:' + maxSize + 'px; max-height:' + maxSize + 'px;">';
+    CATEGORIES.forEach(function (cat) {
+      var amt = catTotals[cat.id] || 0;
+      if (amt > 0) {
+        var pct = amt / total;
+        var strokeLength = availableLength * pct;
+        var dashArrayStr = strokeLength + " " + (c - strokeLength);
+        var strokeOffset = c - currentOffset;
+        svgHtml += '<circle cx="50" cy="50" r="' + r + '" fill="none" stroke="' + cat.color + '" stroke-width="' + strokeW + '" stroke-linecap="round" stroke-dasharray="' + dashArrayStr + '" stroke-dashoffset="' + strokeOffset + '" transform="rotate(-90 50 50)"></circle>';
+        currentOffset += (strokeLength + gapSize);
+      }
+    });
+    svgHtml += '</svg>';
+    return svgHtml;
+  }
+
   function renderChart(total) {
     var targetBox = document.getElementById("svg-chart-container");
     if (!targetBox) return;
@@ -593,64 +635,22 @@
       targetBox.innerHTML = `<div style="color:var(--text-muted); font-size:13px;">尚無累積開銷數據</div>`;
       return;
     }
-    
-    var catTotals = {};
-    state.txns.forEach(function(t) { catTotals[t.category] = (catTotals[t.category] || 0) + t.amount; });
-    
-    var r = 36; 
-    var strokeW = 14; 
-    var c = 2 * Math.PI * r; 
-    var currentOffset = 0;
-    
-    // 計算有多少個有效的花費分類，用來做間隔空隙計算
-    var activeCatsCount = 0;
-    CATEGORIES.forEach(function(cat) { if ((catTotals[cat.id] || 0) > 0) activeCatsCount++; });
 
-    // 每一道間隔設定固定空隙長度 (4px)
-    var gapSize = activeCatsCount > 1 ? 4 : 0; 
-    var totalGapLength = gapSize * activeCatsCount;
-    var availableLength = c - totalGapLength;
-
-    var svgHtml = '<svg width="100%" height="100%" viewBox="0 0 100 100" style="max-width:150px; max-height:150px;">';
-    CATEGORIES.forEach(function(cat) {
-      var amt = catTotals[cat.id] || 0;
-      if (amt > 0) {
-        var pct = amt / total;
-        // 分配扣除空隙後各分類實際應得的圓弧長度
-        var strokeLength = availableLength * pct;
-        
-        // 利用 stroke-dasharray 控制色塊長度與後方隱形間隔，達成完美留白
-        var dashArrayStr = strokeLength + " " + (c - strokeLength);
-        var strokeOffset = c - currentOffset;
-        
-        // stroke-linecap="round" 完美賦予截圖中圓潤高質感的修角外觀
-        svgHtml += '<circle cx="50" cy="50" r="' + r + '" fill="none" stroke="' + cat.color + '" stroke-width="' + strokeW + '" stroke-linecap="round" stroke-dasharray="' + dashArrayStr + '" stroke-dashoffset="' + strokeOffset + '" transform="rotate(-90 50 50)"></circle>';
-        
-        // 下一個項目的起點需要疊加「實際長度 + 空隙長度」
-        currentOffset += (strokeLength + gapSize);
-      }
-    });
-    svgHtml += '</svg>';
-    targetBox.innerHTML = svgHtml;
+    targetBox.innerHTML = buildDonutSvg(state.txns);
   }
 
   // 圓環圖正下方的備註明細清單：由新到舊列出每一筆紀錄的備註
-  function renderDonutNoteList() {
-    var container = document.getElementById("donut-note-list");
-    if (!container) return;
-
-    if (state.txns.length === 0) {
-      container.innerHTML = `<div style="color:var(--text-muted); text-align:center; padding:16px; font-size:12.5px;">暫無花費紀錄</div>`;
-      return;
-    }
+  // 通用分類彙總清單 HTML 產生器：輸入一批交易紀錄，輸出依分類排序的彙總列（圖示、名稱、佔比、筆數、金額）
+  function buildCategoryLegendHtml(txnsList) {
+    if (txnsList.length === 0) return "";
 
     var catTotals = {};
     var catCounts = {};
-    state.txns.forEach(function (t) {
+    txnsList.forEach(function (t) {
       catTotals[t.category] = (catTotals[t.category] || 0) + t.amount;
       catCounts[t.category] = (catCounts[t.category] || 0) + 1;
     });
-    var totalJpy = state.txns.reduce(function (s, t) { return s + t.amount; }, 0);
+    var totalJpy = txnsList.reduce(function (s, t) { return s + t.amount; }, 0);
 
     var arr = [];
     CATEGORIES.forEach(function (c) {
@@ -659,7 +659,7 @@
     });
     arr.sort(function (a, b) { return b.amount - a.amount; });
 
-    container.innerHTML = arr.map(function (item) {
+    return arr.map(function (item) {
       var c = item.cat;
       var pct = totalJpy > 0 ? Math.round(item.amount / totalJpy * 100) : 0;
       return `
@@ -673,6 +673,18 @@
         </div>
       `;
     }).join("");
+  }
+
+  function renderDonutNoteList() {
+    var container = document.getElementById("donut-note-list");
+    if (!container) return;
+
+    if (state.txns.length === 0) {
+      container.innerHTML = `<div style="color:var(--text-muted); text-align:center; padding:16px; font-size:12.5px;">暫無花費紀錄</div>`;
+      return;
+    }
+
+    container.innerHTML = buildCategoryLegendHtml(state.txns);
   }
 
   function renderAnalysisReport(totalSpent) {
@@ -1198,6 +1210,15 @@
       document.getElementById("range-summary-amt").textContent = "¥ " + total.toLocaleString();
       document.getElementById("range-summary-twd").textContent = "≈ NT$ " + Math.round(total * state.exchangeRate).toLocaleString();
       document.getElementById("range-summary-count").textContent = "共 " + list.length + " 筆";
+
+      // 區間內的分類彙總，用圓環圖 + 圖例呈現
+      var donutEl = document.getElementById("range-summary-donut");
+      var donutSvg = buildDonutSvg(list, { r: 32, strokeW: 12, maxSize: 110 });
+      if (!donutSvg) {
+        donutEl.innerHTML = "";
+      } else {
+        donutEl.innerHTML = '<div class="range-donut-chart">' + donutSvg + '</div>' + buildCategoryLegendHtml(list);
+      }
 
       var listEl = document.getElementById("range-summary-list");
       if (list.length === 0) {
