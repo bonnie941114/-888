@@ -508,12 +508,12 @@
     calcExpr: "",
     calYear: todayObj.getFullYear(),
     calMonth: todayObj.getMonth(),
-    selectedDate: todayObj.toISOString().slice(0, 10)
+    selectedDate: toDateStr(todayObj)
   };
   var secretClickCount = 0; // 隱藏防呆計數器
 
   function pad2(n) { return n < 10 ? "0" + n : "" + n; }
-  function todayStr() { return new Date().toISOString().slice(0, 10); }
+  function todayStr() { return toDateStr(new Date()); }
   function toDateStr(d) { return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()); }
 
   // 手機鍵盤彈出時，一般版面（.col）可以透過調整 body 高度跟著收縮，
@@ -541,8 +541,8 @@
   }
 
   function loadInitial() {
-    var todayStr = new Date().toISOString().slice(0, 10);
-    document.getElementById("txn-date-picker").value = todayStr;
+    var todayStrVal = toDateStr(new Date());
+    document.getElementById("txn-date-picker").value = todayStrVal;
 
     setupKeyboardViewportFix();
 
@@ -933,7 +933,7 @@
 
     var groups = {};
     state.txns.forEach(function(t) {
-      var d = t.date || new Date().toISOString().slice(0,10);
+      var d = t.date || toDateStr(new Date());
       if(!groups[d]) groups[d] = [];
       groups[d].push(t);
     });
@@ -1399,23 +1399,23 @@
       var realToday = new Date(); // 相對日期一律以「真正的今天」為基準，避免跟目前選取日期疊加造成混淆
 
       if (/今天/.test(text)) {
-        targetDate = realToday.toISOString().slice(0, 10);
+        targetDate = toDateStr(realToday);
         dateInfoText = " (今天)";
       } else if (/明天/.test(text)) {
         var d = new Date(realToday); d.setDate(d.getDate() + 1);
-        targetDate = d.toISOString().slice(0, 10);
+        targetDate = toDateStr(d);
         dateInfoText = " (明天)";
       } else if (/後天/.test(text)) {
         var d = new Date(realToday); d.setDate(d.getDate() + 2);
-        targetDate = d.toISOString().slice(0, 10);
+        targetDate = toDateStr(d);
         dateInfoText = " (後天)";
       } else if (/昨天/.test(text)) {
         var d = new Date(realToday); d.setDate(d.getDate() - 1);
-        targetDate = d.toISOString().slice(0, 10);
+        targetDate = toDateStr(d);
         dateInfoText = " (昨天)";
       } else if (/前天/.test(text)) {
         var d = new Date(realToday); d.setDate(d.getDate() - 2);
-        targetDate = d.toISOString().slice(0, 10);
+        targetDate = toDateStr(d);
         dateInfoText = " (前天)";
       } else {
         // 只認「7/5」「7-5」「7月5日」這種明確帶分隔符、且月份日期範圍合理的日期格式，
