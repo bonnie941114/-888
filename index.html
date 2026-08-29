@@ -130,6 +130,8 @@
   .rank-tab-group { display: flex; gap: 4px; background: var(--bg-page); border-radius: 10px; padding: 3px; }
   .rank-tab-btn { background: none; border: none; font-size: 11px; font-weight: 700; color: var(--text-muted); padding: 5px 10px; border-radius: 8px; cursor: pointer; }
   .rank-tab-btn.active { background: var(--surface); color: var(--text-main); box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  .rank-detail-cat-summary { margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--border); }
+  .rank-detail-sub-label { font-size: 10.5px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; }
   .rank-detail-list { margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--border); display: flex; flex-direction: column; gap: 6px; }
   .rank-detail-row { display: flex; justify-content: space-between; align-items: baseline; font-size: 12px; gap: 8px; }
   .rank-detail-note { color: var(--text-main); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -172,6 +174,9 @@
   .calc-insert-btn { width: 100%; background: var(--primary); color: white; border: none; border-radius: 14px; padding: 12px; font-size: 13px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; touch-action: manipulation; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
   .calc-insert-btn:active { opacity: 0.85; }
   .calc-note-input { width: 100%; border: 1px solid var(--border); background: var(--bg-page); border-radius: 12px; padding: 10px 12px; font-size: 16px; font-weight: 600; color: var(--text-main); outline: none; margin-bottom: 10px; font-family: 'Noto Sans TC', sans-serif; }
+  .calc-currency-toggle { display: flex; gap: 6px; margin-bottom: 10px; }
+  .calc-currency-btn { flex: 1; background: var(--bg-page); border: 1px solid var(--border); border-radius: 10px; padding: 8px; font-size: 12.5px; font-weight: 700; color: var(--text-muted); cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+  .calc-currency-btn.active { background: var(--primary); border-color: var(--primary); color: white; }
   .calc-note-input:focus { border-color: var(--primary); }
   .calc-secondary-btn { width: 100%; background: none; border: none; color: var(--text-muted); font-size: 11.5px; font-weight: 700; cursor: pointer; padding: 8px 0 0; touch-action: manipulation; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
   .sync-actions { display: flex; gap: 8px; margin-top: 10px; flex-shrink: 0; }
@@ -439,6 +444,11 @@
 
     <input type="text" id="calc-note-input" class="calc-note-input" placeholder="這筆是什麼？（選填，例如：午餐）" onfocus="setTimeout(function(){ this.scrollIntoView({block:'center', behavior:'smooth'}); }.bind(this), 150)">
 
+    <div class="calc-currency-toggle">
+      <button class="calc-currency-btn active" id="calc-cur-jpy" onclick="App.setCalcCurrency('JPY')">¥ 日圓</button>
+      <button class="calc-currency-btn" id="calc-cur-twd" onclick="App.setCalcCurrency('TWD')">NT$ 台幣</button>
+    </div>
+
     <div class="calc-display num-font" id="calc-display">0</div>
     <div class="calc-btn-grid">
       <button class="calc-btn calc-btn-op" onclick="App.calcClear()">C</button>
@@ -506,6 +516,7 @@
     rankViewMode: "category",
     expandedRanks: {},
     calcExpr: "",
+    calcCurrency: "JPY",
     calYear: todayObj.getFullYear(),
     calMonth: todayObj.getMonth(),
     selectedDate: toDateStr(todayObj)
@@ -793,7 +804,9 @@
       if (isOpen) {
         var items = state.txns.filter(function(t) { return (t.account || "cash") === acc.id; })
                                .sort(function(a, b) { return (b.date + (b.time||"")).localeCompare(a.date + (a.time||"")); });
-        detailHtml = '<div class="rank-detail-list">' + items.map(function(t) {
+        var catBarHtml = buildCategoryBarHtml(items);
+        detailHtml = (catBarHtml ? '<div class="rank-detail-cat-summary"><div class="rank-detail-sub-label">分類彙總</div>' + catBarHtml + '</div>' : '')
+          + '<div class="rank-detail-list"><div class="rank-detail-sub-label">逐筆明細</div>' + items.map(function(t) {
           var c = CATEGORIES.find(function(x) { return x.id === t.category; });
           var label = t.note || (c ? c.name : "其他");
           return '<div class="rank-detail-row"><span class="rank-detail-note">' + label + '</span><span class="rank-detail-meta num-font">' + t.date + ' · ¥' + t.amount.toLocaleString() + '</span></div>';
@@ -1073,11 +1086,19 @@
   window.App = {
     openCalculator: function () {
       state.calcExpr = "";
+      state.calcCurrency = "JPY";
       document.getElementById("calc-display").textContent = "0";
       document.getElementById("calc-note-input").value = "";
+      document.getElementById("calc-cur-jpy").classList.add("active");
+      document.getElementById("calc-cur-twd").classList.remove("active");
       document.getElementById("calc-modal").classList.add("show");
       // 點擊輸入框時鍵盤可能會先閃一下，這裡立刻讓它失焦、把鍵盤收起來，只留計算機
       document.getElementById("chat-input-field").blur();
+    },
+    setCalcCurrency: function (cur) {
+      state.calcCurrency = cur;
+      document.getElementById("calc-cur-jpy").classList.toggle("active", cur === "JPY");
+      document.getElementById("calc-cur-twd").classList.toggle("active", cur === "TWD");
     },
     closeCalculator: function () {
       document.getElementById("calc-modal").classList.remove("show");
@@ -1143,8 +1164,9 @@
       App.closeCalculator();
       if (val) {
         var noteVal = document.getElementById("calc-note-input").value.trim();
+        var currencyTag = state.calcCurrency === "TWD" ? "台幣" : "";
         var existing = inputEl.value.trim();
-        var pieces = [existing, noteVal, val].filter(function (s) { return s; });
+        var pieces = [existing, noteVal, val, currencyTag].filter(function (s) { return s; });
         inputEl.value = pieces.join(" ");
         App.onLiveTyping();
       }
@@ -1160,7 +1182,10 @@
         return;
       }
 
-      var finalJpy = Math.round(result * 100) / 100;
+      var isTwd = state.calcCurrency === "TWD";
+      var finalJpy = isTwd ? Math.round(result / state.exchangeRate) : Math.round(result);
+      var finalTwd = isTwd ? Math.round(result) : Math.round(result * state.exchangeRate);
+
       var noteVal = document.getElementById("calc-note-input").value.trim();
       var targetDate = document.getElementById("txn-date-picker").value || todayStr();
 
@@ -1168,18 +1193,22 @@
       var timeStr = pad(now.getHours()) + ":" + pad(now.getMinutes());
       var uniqueId = Date.now() + Math.floor(Math.random() * 1000);
 
-      state.pendingTxn = { id: uniqueId, amount: Math.round(finalJpy), note: noteVal, category: null, account: "cash", tag: "none", photo: state.currentPhoto, date: targetDate, time: timeStr };
+      state.pendingTxn = { id: uniqueId, amount: finalJpy, note: noteVal, category: null, account: "cash", tag: "none", photo: state.currentPhoto, date: targetDate, time: timeStr };
       state.currentPhoto = null;
 
       App.closeCalculator();
 
-      appendMessage("user", (noteVal ? noteVal + " " : "") + "¥" + finalJpy.toLocaleString());
-      appendMessage("bot", `📅 交易日期：${targetDate}<br>金額分析：日圓 ¥ ${finalJpy.toLocaleString()} (折合台幣 NT$ ${Math.round(finalJpy * state.exchangeRate).toLocaleString()})。請在下方選單點選消費分類。`);
+      var userMsgAmt = isTwd ? ("NT$" + finalTwd.toLocaleString()) : ("¥" + finalJpy.toLocaleString());
+      appendMessage("user", (noteVal ? noteVal + " " : "") + userMsgAmt);
+
+      var currencyReport = "日圓 ¥ " + finalJpy.toLocaleString() + " (折合台幣 NT$ " + finalTwd.toLocaleString() + ")";
+      if (isTwd) currencyReport = "台幣 NT$ " + finalTwd.toLocaleString() + " (折合日圓 ¥ " + finalJpy.toLocaleString() + ")";
+      appendMessage("bot", `📅 交易日期：${targetDate}<br>金額分析：${currencyReport}。請在下方選單點選消費分類。`);
 
       var drawer = document.getElementById("reply-drawer");
       var drawerTitle = document.getElementById("drawer-action-title");
       var target = document.getElementById("drawer-content-target");
-      drawerTitle.textContent = "請點選花費分類 💰金額：¥" + finalJpy.toLocaleString();
+      drawerTitle.textContent = "請點選花費分類 💰金額：" + (isTwd ? "NT$" + finalTwd.toLocaleString() : "¥" + finalJpy.toLocaleString());
       target.innerHTML = '<div class="chat-guide-box">' + CATEGORIES.map(function (c) { return '<button class="guide-btn" onclick="App.selectPendingCat(\'' + c.id + '\')"><span>' + c.icon + '</span><span>' + c.name + '</span></button>'; }).join("") + '</div>';
       drawer.style.display = "flex";
     },
