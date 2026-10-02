@@ -60,13 +60,155 @@ async function replyWithQuickReply(replyToken, text, items) {
   ]);
 }
 
-async function getUserRates(lineUserId) {
+async function getUserSettings(lineUserId) {
   const { data } = await supabase
     .from("user_settings")
-    .select("exchange_rates")
+    .select("exchange_rates, monthly_budget")
     .eq("line_user_id", lineUserId)
     .maybeSingle();
-  return data?.exchange_rates || { JPY: 0.21, USD: 31.5 };
+  return {
+    exchangeRates: data?.exchange_rates || { JPY: 0.21, USD: 31.5 },
+    monthlyBudget: data?.monthly_budget != null ? Number(data.monthly_budget) : null,
+  };
+}
+
+async function setMonthlyBudget(lineUserId, amount) {
+  await supabase
+    .from("user_settings")
+    .upsert({ line_user_id: lineUserId, monthly_budget: amount }, { onConflict: "line_user_id" });
+}
+
+function monthRangeOf(date) {
+  const y = date.getFullYear();
+  const m = date.getMonth() + 1;
+  const start = `${y}-${String(m).padStart(2, "0")}-01`;
+  const end = new Date(y, m, 1).toISOString().slice(0, 10);
+  return { y, m, start, end };
+}
+
+// 建立「本月統計」Flex Message（用色塊模擬長條圖，不需要額外產圖或外部圖片）
+function buildStatsFlex(rows, monthLabel) {
+  const totals = {};
+  rows.forEach((t) => {
+    totals[t.category || "other"] = (totals[t.category || "other"] || 0) + Number(t.amount_twd);
+  });
+  const total = rows.reduce((s, t) => s + Number(t.amount_twd), 0);
+
+  const arr = Object.keys(totals)
+    .map((catId) => {
+      const c = CATEGORIES.find((x) => x.id === catId);
+      return { id: catId, name: c ? c.name : "其他", icon: c ? c.icon : "❔", color: c ? c.color : "#999999", amount: totals[catId] };
+    })
+    .sort((a, b) => b.amount - a.amount)
+    .slice(0, 8);
+
+  const maxAmount = arr.length > 0 ? arr[0].amount : 1;
+
+  const rowsContents = arr.map((item) => {
+    const pct = Math.max(4, Math.round((item.amount / maxAmount) * 100)); // 最小4%讓短的也看得到一點顏色
+    return {
+      type: "box",
+      layout: "vertical",
+      margin: "md",
+      contents: [
+        {
+          type: "box",
+          layout: "horizontal",
+          contents: [
+            { type: "text", text: `${item.icon} ${item.name}`, size: "sm", flex: 3 },
+            { type: "text", text: `NT$${item.amount.toLocaleString()}`, size: "sm", align: "end", flex: 2 },
+          ],
+        },
+        {
+          type: "box",
+          layout: "vertical",
+          height: "8px",
+          backgroundColor: "#EEEEEE",
+          cornerRadius: "4px",
+          margin: "xs",
+          contents: [
+            {
+              type: "box",
+              layout: "vertical",
+              height: "8px",
+              width: `${pct}%`,
+              backgroundColor: item.color,
+              cornerRadius: "4px",
+              contents: [],
+            },
+          ],
+        },
+      ],
+    };
+  });
+
+  return {
+    type: "flex",
+    altText: `${monthLabel} 統計：共 NT$${total.toLocaleString()}`,
+    contents: {
+      type: "bubble",
+      header: {
+        type: "box",
+        layout: "vertical",
+        contents: [
+          { type: "text", text: `📊 ${monthLabel} 統計`, weight: "bold", size: "lg" },
+          { type: "text", text: `總支出 NT$ ${total.toLocaleString()}`, size: "sm", color: "#999999" },
+        ],
+      },
+      body: {
+        type: "box",
+        layout: "vertical",
+        contents: rowsContents.length > 0 ? rowsContents : [{ type: "text", text: "這個月還沒有任何紀錄" }],
+      },
+    },
+  };
+}
+
+// 今日結算 + 本月預算剩餘，手動查詢「今日」跟每天自動推播都共用這段邏輯
+async function buildDailySummaryText(lineUserId) {
+  const now = new Date();
+  const todayStr = now.toISOString().slice(0, 10);
+  const { y, m, start, end } = monthRangeOf(now);
+
+  const { data: todayRows } = await supabase
+    .from("transactions")
+    .select("amount_twd")
+    .eq("line_user_id", lineUserId)
+    .eq("date", todayStr);
+
+  const { data: monthRows } = await supabase
+    .from("transactions")
+    .select("amount_twd")
+    .eq("line_user_id", lineUserId)
+    .gte("date", start)
+    .lt("date", end);
+
+  const todayTotal = (todayRows || []).reduce((s, t) => s + Number(t.amount_twd), 0);
+  const monthTotal = (monthRows || []).reduce((s, t) => s + Number(t.amount_twd), 0);
+  const settings = await getUserSettings(lineUserId);
+
+  let lines = [
+    `📅 ${todayStr} 今日結算`,
+    `今日花費：NT$ ${todayTotal.toLocaleString()}`,
+    `本月累計（${y}年${m}月）：NT$ ${monthTotal.toLocaleString()}`,
+  ];
+
+  if (settings.monthlyBudget != null) {
+    const remain = settings.monthlyBudget - monthTotal;
+    const daysInMonth = new Date(y, m, 0).getDate();
+    const daysLeft = daysInMonth - now.getDate() + 1;
+    const perDay = daysLeft > 0 ? Math.floor(remain / daysLeft) : remain;
+    lines.push(`本月預算：NT$ ${settings.monthlyBudget.toLocaleString()}`);
+    lines.push(
+      remain >= 0
+        ? `剩餘可花：NT$ ${remain.toLocaleString()}（剩 ${daysLeft} 天，平均每天可花 NT$ ${perDay.toLocaleString()}）`
+        : `⚠️ 已超支 NT$ ${Math.abs(remain).toLocaleString()}`
+    );
+  } else {
+    lines.push("（尚未設定本月預算，傳「預算 20000」即可設定）");
+  }
+
+  return lines.join("\n");
 }
 
 function formatReply(parsed) {
@@ -140,6 +282,38 @@ module.exports = async (req, res) => {
 
       const text = event.message.text.trim();
 
+      // 指令：統計 → 回傳本月分類長條圖卡片
+      if (text === "統計" || text === "本月統計" || text === "圖表") {
+        const now = new Date();
+        const { y, m, start, end } = monthRangeOf(now);
+
+        const { data: rows } = await supabase
+          .from("transactions")
+          .select("category, amount_twd")
+          .eq("line_user_id", lineUserId)
+          .gte("date", start)
+          .lt("date", end);
+
+        const flexMsg = buildStatsFlex(rows || [], `${y}年${m}月`);
+        await replyRaw(event.replyToken, [flexMsg]);
+        return;
+      }
+
+      // 指令：今日 → 今天花了多少 + 本月預算剩多少
+      if (text === "今日" || text === "今日結算" || text === "今天") {
+        await replyMessage(event.replyToken, await buildDailySummaryText(lineUserId));
+        return;
+      }
+
+      // 指令：預算 20000 → 設定本月預算
+      const budgetMatch = text.match(/^(?:設定預算|預算)\s*([\d,]+)/);
+      if (budgetMatch) {
+        const amount = parseInt(budgetMatch[1].replace(/,/g, ""), 10);
+        await setMonthlyBudget(lineUserId, amount);
+        await replyMessage(event.replyToken, `✅ 已設定本月預算為 NT$ ${amount.toLocaleString()}`);
+        return;
+      }
+
       // 指令：刪除 → 列出最近5筆，用按鈕選要刪哪一筆
       if (text === "刪除" || text === "刪除紀錄") {
         const { data: recent } = await supabase
@@ -188,13 +362,13 @@ module.exports = async (req, res) => {
         }
       }
 
-      const rates = await getUserRates(lineUserId);
-      const parsed = parseMessage(text, rates);
+      const settings = await getUserSettings(lineUserId);
+      const parsed = parseMessage(text, settings.exchangeRates);
 
       if (!parsed.ok) {
         await replyMessage(
           event.replyToken,
-          "❌ 沒辨識到金額喔！\n格式範例：\n「午餐 150」\n「日幣 咖哩飯 1200」\n「昨天 交通 50*2」\n\n想刪除紀錄請傳「刪除」"
+          "❌ 沒辨識到金額喔！\n格式範例：\n「午餐 150」\n「日幣 咖哩飯 1200」\n「昨天 交通 50*2」\n\n想刪除紀錄請傳「刪除」\n想看本月統計請傳「統計」"
         );
         return;
       }
