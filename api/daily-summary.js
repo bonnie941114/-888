@@ -1,17 +1,11 @@
 const { createClient } = require("@supabase/supabase-js");
+const { buildDailySummaryFlex } = require("../lib/flexBuilders");
+const { taiwanNow, taiwanTodayStr, taiwanMonthRange } = require("../lib/time");
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
-
-function monthRangeOf(date) {
-  const y = date.getFullYear();
-  const m = date.getMonth() + 1;
-  const start = `${y}-${String(m).padStart(2, "0")}-01`;
-  const end = new Date(y, m, 1).toISOString().slice(0, 10);
-  return { y, m, start, end };
-}
 
 async function getUserSettings(lineUserId) {
   const { data } = await supabase
@@ -22,14 +16,15 @@ async function getUserSettings(lineUserId) {
   return { monthlyBudget: data?.monthly_budget != null ? Number(data.monthly_budget) : null };
 }
 
-async function buildDailySummaryText(lineUserId) {
-  const now = new Date();
-  const todayStr = now.toISOString().slice(0, 10);
-  const { y, m, start, end } = monthRangeOf(now);
+// 回傳 Flex Message（圖表卡片：預算進度條 + 今日分類長條圖），不是純文字
+async function buildDailySummaryFlexForUser(lineUserId) {
+  const todayStr = taiwanTodayStr();
+  const t = taiwanNow();
+  const { start, nextMonthStart: end, daysInMonth } = taiwanMonthRange(t.year, t.month);
 
   const { data: todayRows } = await supabase
     .from("transactions")
-    .select("amount_twd")
+    .select("amount_twd, category")
     .eq("line_user_id", lineUserId)
     .eq("date", todayStr);
 
@@ -40,33 +35,23 @@ async function buildDailySummaryText(lineUserId) {
     .gte("date", start)
     .lt("date", end);
 
-  const todayTotal = (todayRows || []).reduce((s, t) => s + Number(t.amount_twd), 0);
-  const monthTotal = (monthRows || []).reduce((s, t) => s + Number(t.amount_twd), 0);
+  const todayTotal = (todayRows || []).reduce((s, r) => s + Number(r.amount_twd), 0);
+  const monthTotal = (monthRows || []).reduce((s, r) => s + Number(r.amount_twd), 0);
   const settings = await getUserSettings(lineUserId);
+  const daysLeft = daysInMonth - t.day + 1;
 
-  let lines = [
-    `🌙 ${todayStr} 每日結算`,
-    `今日花費：NT$ ${todayTotal.toLocaleString()}`,
-    `本月累計（${y}年${m}月）：NT$ ${monthTotal.toLocaleString()}`,
-  ];
-
-  if (settings.monthlyBudget != null) {
-    const remain = settings.monthlyBudget - monthTotal;
-    const daysInMonth = new Date(y, m, 0).getDate();
-    const daysLeft = daysInMonth - now.getDate() + 1;
-    const perDay = daysLeft > 0 ? Math.floor(remain / daysLeft) : remain;
-    lines.push(`本月預算：NT$ ${settings.monthlyBudget.toLocaleString()}`);
-    lines.push(
-      remain >= 0
-        ? `剩餘可花：NT$ ${remain.toLocaleString()}（剩 ${daysLeft} 天，平均每天可花 NT$ ${perDay.toLocaleString()}）`
-        : `⚠️ 已超支 NT$ ${Math.abs(remain).toLocaleString()}`
-    );
-  }
-
-  return lines.join("\n");
+  return buildDailySummaryFlex({
+    dateStr: todayStr,
+    todayTotal,
+    todayRows: todayRows || [],
+    monthLabel: `${t.year}年${t.month}月`,
+    monthTotal,
+    budget: settings.monthlyBudget,
+    daysLeft,
+  });
 }
 
-async function pushMessage(lineUserId, text) {
+async function pushFlexMessage(lineUserId, flexMsg) {
   await fetch("https://api.line.me/v2/bot/message/push", {
     method: "POST",
     headers: {
@@ -75,7 +60,7 @@ async function pushMessage(lineUserId, text) {
     },
     body: JSON.stringify({
       to: lineUserId,
-      messages: [{ type: "text", text }],
+      messages: [flexMsg],
     }),
   });
 }
@@ -94,8 +79,8 @@ module.exports = async (req, res) => {
   const userIds = [...new Set((rows || []).map((r) => r.line_user_id))];
 
   for (const uid of userIds) {
-    const text = await buildDailySummaryText(uid);
-    await pushMessage(uid, text);
+    const flexMsg = await buildDailySummaryFlexForUser(uid);
+    await pushFlexMessage(uid, flexMsg);
   }
 
   res.status(200).json({ ok: true, sent: userIds.length });
