@@ -70,6 +70,16 @@
   
   .bubble { padding: 10px 14px; border-radius: 16px; font-size: 13.5px; font-weight: 500; line-height: 1.4; box-shadow: 0 2px 6px rgba(0,0,0,0.01); word-break: break-all; }
   .bot .bubble { background: var(--bot-bubble); color: var(--text-main); border-top-left-radius: 4px; border: 1px solid var(--border); }
+  .chat-chart-card { width: 100%; max-width: 230px; }
+  .chat-chart-head { display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-weight: 800; margin-bottom: 8px; color: var(--text-main); }
+  .chat-chart-head .num-font { color: var(--expense); }
+  .chat-chart-donut { display: flex; justify-content: center; padding: 2px 0 10px; }
+  .chat-chart-bars { display: flex; flex-direction: column; gap: 7px; }
+  .chat-budget-block { margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px dashed var(--border); }
+  .chat-budget-row { display: flex; justify-content: space-between; align-items: baseline; font-size: 11.5px; font-weight: 700; color: var(--text-main); }
+  .chat-budget-bar-bg { width: 100%; height: 8px; background: var(--border); border-radius: 5px; overflow: hidden; margin-top: 4px; }
+  .chat-budget-bar-fill { height: 100%; border-radius: 5px; transition: width 0.3s; }
+  .chat-budget-sub { font-size: 10.5px; color: var(--text-muted); font-weight: 600; margin-top: 6px; }
   .user .bubble { background: var(--user-bubble); color: var(--user-text); border-top-right-radius: 4px; font-weight: 700; }
   
   /* 彈出抽屜 */
@@ -325,6 +335,10 @@
 
       <!-- 圓環圖檢視 -->
       <div id="donut-view-container" class="chart-view-panel">
+        <div class="rank-tab-group" style="align-self:center; margin-bottom:6px;">
+          <button class="rank-tab-btn active" id="donut-tab-cat" onclick="App.switchRankView('category')">依分類</button>
+          <button class="rank-tab-btn" id="donut-tab-acc" onclick="App.switchRankView('account')">依支付方式</button>
+        </div>
         <div class="pie-chart-wrapper">
           <div id="svg-chart-container" style="width:100%; height:100%; display:flex; justify-content:center; align-items:center;"></div>
         </div>
@@ -342,6 +356,9 @@
 
       <div style="font-size: 11px; color: var(--text-muted); text-align: center; margin-top: 10px; flex-shrink:0;">
         匯率設定：<input type="number" id="rate-setting" value="0.212" step="0.001" style="width:48px; border:none; background:transparent; font-weight:700; color:var(--text-main); outline:none;" onchange="App.updateRate()">
+      </div>
+      <div style="font-size: 11px; color: var(--text-muted); text-align: center; margin-top: 4px; flex-shrink:0;">
+        本月預算：NT$ <input type="number" id="budget-setting" value="0" step="100" style="width:64px; border:none; background:transparent; font-weight:700; color:var(--text-main); outline:none;" onchange="App.updateBudget()">
       </div>
 
       <!-- 匯出/匯入備份：手機與電腦沒有雲端同步，用這個手動把資料搬過去 -->
@@ -506,7 +523,8 @@
     { id: "jko", name: "街口支付", icon: "🅹", color: "#FF6B6B" }, 
     { id: "credit", name: "信用卡", icon: "💳", color: "#6C5CE7" }, 
     { id: "bank", name: "銀行帳戶", icon: "🏦", color: "#0984E3" }, 
-    { id: "linepay", name: "LINE Pay", icon: "💬", color: "#00B900" }
+    { id: "linepay", name: "LINE Pay", icon: "💬", color: "#00B900" },
+    { id: "easycard", name: "悠遊卡", icon: "🚌", color: "#E0A030" }
   ];
 
   var STORAGE_KEY = "共榮防跑版系統-完全體-v17";
@@ -517,6 +535,7 @@
     expandedRanks: {},
     calcExpr: "",
     calcCurrency: "JPY",
+    monthlyBudget: 0,
     calYear: todayObj.getFullYear(),
     calMonth: todayObj.getMonth(),
     selectedDate: toDateStr(todayObj)
@@ -563,9 +582,11 @@
         var p = JSON.parse(val);
         if (Array.isArray(p.txns)) state.txns = p.txns;
         if (p.exchangeRate) state.exchangeRate = p.exchangeRate;
+        if (p.monthlyBudget) state.monthlyBudget = p.monthlyBudget;
       } catch(e){}
     }
     document.getElementById("rate-setting").value = state.exchangeRate;
+    document.getElementById("budget-setting").value = state.monthlyBudget;
 
     var mStart = new Date(state.calYear, state.calMonth, 1);
     var mEnd = new Date(state.calYear, state.calMonth + 1, 0);
@@ -596,10 +617,69 @@
     container.scrollTop = container.scrollHeight;
   }
 
+  // 計算本月累計花費（台幣）、預算進度、剩餘可花、平均每天可花
+  function getMonthBudgetStats() {
+    var now = new Date();
+    var y = now.getFullYear(), m = now.getMonth();
+    var monthStart = toDateStr(new Date(y, m, 1));
+    var monthEnd = toDateStr(new Date(y, m + 1, 0));
+    var monthTxns = state.txns.filter(function (t) { return t.date >= monthStart && t.date <= monthEnd; });
+    var cumulativeJpy = monthTxns.reduce(function (s, t) { return s + t.amount; }, 0);
+    var cumulativeTwd = Math.round(cumulativeJpy * state.exchangeRate);
+
+    var daysInMonth = new Date(y, m + 1, 0).getDate();
+    var daysLeft = daysInMonth - now.getDate() + 1;
+    var budget = state.monthlyBudget || 0;
+    var remaining = budget - cumulativeTwd;
+    var avgPerDay = daysLeft > 0 ? Math.round(remaining / daysLeft) : 0;
+    var pct = budget > 0 ? Math.min(100, Math.round(cumulativeTwd / budget * 100)) : 0;
+
+    return { monthLabel: (y + "年" + (m + 1) + "月"), cumulativeTwd: cumulativeTwd, budget: budget, remaining: remaining, daysLeft: daysLeft, avgPerDay: avgPerDay, pct: pct };
+  }
+
+  // 每次記帳完成後，在聊天室裡用「圖表」呈現當天的結算（含本月預算進度條），而不是純文字
+  function appendDailyChartSummary(dateStr) {
+    var stats = getDayStats(dateStr);
+    if (stats.count === 0) return;
+
+    var d = new Date(dateStr + "T00:00:00");
+    var dateLabel = (d.getMonth() + 1) + "月" + d.getDate() + "日";
+    var todayTwd = Math.round(stats.total * state.exchangeRate);
+    var m = getMonthBudgetStats();
+
+    var barColor = m.pct >= 100 ? "var(--expense)" : (m.pct >= 80 ? "#E0A030" : "var(--primary)");
+
+    var budgetHtml = "";
+    if (m.budget > 0) {
+      budgetHtml = '<div class="chat-budget-block">'
+        + '<div class="chat-budget-row"><span>本月累計（' + m.monthLabel + '）</span><span class="num-font">NT$ ' + m.cumulativeTwd.toLocaleString() + '</span></div>'
+        + '<div class="chat-budget-bar-bg"><div class="chat-budget-bar-fill" style="width:' + m.pct + '%; background:' + barColor + ';"></div></div>'
+        + '<div class="chat-budget-row" style="margin-top:4px;"><span>本月預算</span><span class="num-font">NT$ ' + m.budget.toLocaleString() + '</span></div>'
+        + '<div class="chat-budget-sub">剩餘可花 NT$ ' + m.remaining.toLocaleString() + '（剩 ' + m.daysLeft + ' 天，平均每天可花 NT$ ' + m.avgPerDay.toLocaleString() + '）</div>'
+        + '</div>';
+    }
+
+    var donutSvg = buildDonutSvg(stats.list, { r: 30, strokeW: 11, maxSize: 96 });
+    var barsHtml = buildCategoryBarHtml(stats.list);
+
+    var html = '<div class="chat-chart-card">'
+      + '<div class="chat-chart-head"><span>🌙 ' + dateLabel + ' 每日結算</span><span class="num-font">NT$ ' + todayTwd.toLocaleString() + '</span></div>'
+      + budgetHtml
+      + (donutSvg ? '<div class="chat-chart-donut">' + donutSvg + '</div>' : '')
+      + '<div class="chat-chart-bars">' + barsHtml + '</div>'
+      + '</div>';
+
+    appendMessage("bot", "", html);
+  }
+
   // 👑 1:1 完美還原 LINE_NOTE_260706_2.jpg：分離式、圓弧收角、帶空隙的高級圓環引擎
-  // 通用圓環圖 SVG 產生器：輸入一批交易紀錄，輸出依分類分色的圓環圖 SVG 字串
+  // 通用圓環圖 SVG 產生器：輸入一批交易紀錄，輸出依分類或依支付方式分色的圓環圖 SVG 字串
+  // opts.mode: "category"（預設）或 "account"
   function buildDonutSvg(txnsList, opts) {
     opts = opts || {};
+    var mode = opts.mode || "category";
+    var LIST = mode === "account" ? ACCOUNTS : CATEGORIES;
+    var keyField = mode === "account" ? "account" : "category";
     var r = opts.r || 36;
     var strokeW = opts.strokeW || 14;
     var maxSize = opts.maxSize || 150;
@@ -608,27 +688,30 @@
     if (total === 0) return null;
 
     var catTotals = {};
-    txnsList.forEach(function (t) { catTotals[t.category] = (catTotals[t.category] || 0) + t.amount; });
+    txnsList.forEach(function (t) {
+      var k = t[keyField] || (mode === "account" ? "cash" : null);
+      catTotals[k] = (catTotals[k] || 0) + t.amount;
+    });
 
     var c = 2 * Math.PI * r;
     var currentOffset = 0;
 
     var activeCatsCount = 0;
-    CATEGORIES.forEach(function (cat) { if ((catTotals[cat.id] || 0) > 0) activeCatsCount++; });
+    LIST.forEach(function (item) { if ((catTotals[item.id] || 0) > 0) activeCatsCount++; });
 
     var gapSize = activeCatsCount > 1 ? 4 : 0;
     var totalGapLength = gapSize * activeCatsCount;
     var availableLength = c - totalGapLength;
 
     var svgHtml = '<svg width="100%" height="100%" viewBox="0 0 100 100" style="max-width:' + maxSize + 'px; max-height:' + maxSize + 'px;">';
-    CATEGORIES.forEach(function (cat) {
-      var amt = catTotals[cat.id] || 0;
+    LIST.forEach(function (item) {
+      var amt = catTotals[item.id] || 0;
       if (amt > 0) {
         var pct = amt / total;
         var strokeLength = availableLength * pct;
         var dashArrayStr = strokeLength + " " + (c - strokeLength);
         var strokeOffset = c - currentOffset;
-        svgHtml += '<circle cx="50" cy="50" r="' + r + '" fill="none" stroke="' + cat.color + '" stroke-width="' + strokeW + '" stroke-linecap="round" stroke-dasharray="' + dashArrayStr + '" stroke-dashoffset="' + strokeOffset + '" transform="rotate(-90 50 50)"></circle>';
+        svgHtml += '<circle cx="50" cy="50" r="' + r + '" fill="none" stroke="' + item.color + '" stroke-width="' + strokeW + '" stroke-linecap="round" stroke-dasharray="' + dashArrayStr + '" stroke-dashoffset="' + strokeOffset + '" transform="rotate(-90 50 50)"></circle>';
         currentOffset += (strokeLength + gapSize);
       }
     });
@@ -645,24 +728,29 @@
       return;
     }
 
-    targetBox.innerHTML = buildDonutSvg(state.txns);
+    targetBox.innerHTML = buildDonutSvg(state.txns, { mode: state.rankViewMode });
   }
 
-  // 圓環圖正下方的備註明細清單：由新到舊列出每一筆紀錄的備註
-  // 通用分類彙總清單 HTML 產生器：輸入一批交易紀錄，輸出依分類排序的彙總列（圖示、名稱、佔比、筆數、金額）
-  function buildCategoryLegendHtml(txnsList) {
+  // 圓環圖正下方的彙總清單：由高到低列出每個分類或支付方式的佔比
+  // 通用彙總清單 HTML 產生器：輸入一批交易紀錄，輸出依分類或依支付方式排序的彙總列（圖示、名稱、佔比、筆數、金額）
+  // mode: "category"（預設）或 "account"
+  function buildCategoryLegendHtml(txnsList, mode) {
     if (txnsList.length === 0) return "";
+    mode = mode || "category";
+    var LIST = mode === "account" ? ACCOUNTS : CATEGORIES;
+    var keyField = mode === "account" ? "account" : "category";
 
     var catTotals = {};
     var catCounts = {};
     txnsList.forEach(function (t) {
-      catTotals[t.category] = (catTotals[t.category] || 0) + t.amount;
-      catCounts[t.category] = (catCounts[t.category] || 0) + 1;
+      var k = t[keyField] || (mode === "account" ? "cash" : null);
+      catTotals[k] = (catTotals[k] || 0) + t.amount;
+      catCounts[k] = (catCounts[k] || 0) + 1;
     });
     var totalJpy = txnsList.reduce(function (s, t) { return s + t.amount; }, 0);
 
     var arr = [];
-    CATEGORIES.forEach(function (c) {
+    LIST.forEach(function (c) {
       var amt = catTotals[c.id] || 0;
       if (amt > 0) arr.push({ cat: c, amount: amt, count: catCounts[c.id] || 0 });
     });
@@ -693,7 +781,7 @@
       return;
     }
 
-    container.innerHTML = buildCategoryLegendHtml(state.txns);
+    container.innerHTML = buildCategoryLegendHtml(state.txns, state.rankViewMode);
   }
 
   function renderAnalysisReport(totalSpent) {
@@ -1265,8 +1353,12 @@
       state.rankViewMode = mode;
       document.getElementById("rank-tab-cat").classList.toggle("active", mode === "category");
       document.getElementById("rank-tab-acc").classList.toggle("active", mode === "account");
+      document.getElementById("donut-tab-cat").classList.toggle("active", mode === "category");
+      document.getElementById("donut-tab-acc").classList.toggle("active", mode === "account");
       var totalJpy = state.txns.reduce(function (s, t) { return s + t.amount; }, 0);
       renderAnalysisReport(totalJpy);
+      renderChart(totalJpy);
+      renderDonutNoteList();
     },
     prevMonth: function () {
       state.calMonth--;
@@ -1328,8 +1420,12 @@
     handleKeyPress: function(e) { if (e.key === "Enter") App.processUserMessage(); },
     updateRate: function() {
       state.exchangeRate = parseFloat(document.getElementById("rate-setting").value) || 0.212;
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ txns: state.txns, exchangeRate: state.exchangeRate }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ txns: state.txns, exchangeRate: state.exchangeRate, monthlyBudget: state.monthlyBudget }));
       renderAll();
+    },
+    updateBudget: function() {
+      state.monthlyBudget = parseFloat(document.getElementById("budget-setting").value) || 0;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ txns: state.txns, exchangeRate: state.exchangeRate, monthlyBudget: state.monthlyBudget }));
     },
     // 匯出目前所有記帳資料成 JSON 檔，方便手動搬到另一台裝置（手機/電腦沒有雲端同步）
     exportData: function () {
@@ -1370,7 +1466,7 @@
             }
           });
 
-          localStorage.setItem(STORAGE_KEY, JSON.stringify({ txns: state.txns, exchangeRate: state.exchangeRate }));
+          localStorage.setItem(STORAGE_KEY, JSON.stringify({ txns: state.txns, exchangeRate: state.exchangeRate, monthlyBudget: state.monthlyBudget }));
           renderAll();
           alert("✅ 匯入完成！新增 " + added + " 筆紀錄" + (skipped > 0 ? "（略過 " + skipped + " 筆重複）" : "") + "。");
         } catch (err) {
@@ -1544,11 +1640,12 @@
       
       var t = state.pendingTxn;
       state.txns.unshift(t);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ txns: state.txns, exchangeRate: state.exchangeRate }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ txns: state.txns, exchangeRate: state.exchangeRate, monthlyBudget: state.monthlyBudget }));
       state.pendingTxn = null;
 
       document.getElementById("reply-drawer").style.display = "none";
       appendMessage("bot", "✅ 成功記入！");
+      appendDailyChartSummary(t.date);
       
       if (window.innerWidth <= 768) {
         document.getElementById("badge-chart").style.display = "block";
@@ -1564,7 +1661,7 @@
     deleteRecord: function(id) {
       if (confirm("確定要刪除這筆消費明細嗎？（此動作無法復原）")) {
         state.txns = state.txns.filter(function(t) { return t.id !== id; });
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({ txns: state.txns, exchangeRate: state.exchangeRate }));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ txns: state.txns, exchangeRate: state.exchangeRate, monthlyBudget: state.monthlyBudget }));
         renderAll();
       }
     },
@@ -1576,7 +1673,7 @@
         var pwd = prompt("⚠️ 您已觸發系統格式化核心！為了防止誤刪，請輸入大寫「RESET」以確認清除所有帳目：");
         if (pwd === "RESET") {
           state.txns = [];
-          localStorage.setItem(STORAGE_KEY, JSON.stringify({ txns: [], exchangeRate: state.exchangeRate }));
+          localStorage.setItem(STORAGE_KEY, JSON.stringify({ txns: [], exchangeRate: state.exchangeRate, monthlyBudget: state.monthlyBudget }));
           alert("💥 所有記帳快取已清空重置。");
           renderAll();
         } else if (pwd !== null) {
